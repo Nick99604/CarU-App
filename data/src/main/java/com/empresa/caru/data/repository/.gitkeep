@@ -1,0 +1,4 @@
+// Repository contracts (interfaces)
+package com.empresa.caru.data.repository
+
+// TODO: Add repository interfaces

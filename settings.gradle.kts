@@ -24,3 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "CarU"
 include(":app")
+include(":domain")
+include(":data")

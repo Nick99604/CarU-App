@@ -1,0 +1,4 @@
+// Domain models
+package com.empresa.caru.domain.model
+
+// TODO: Add domain models (e.g., User, FoodStand, Order)

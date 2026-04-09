@@ -2,10 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Module Architecture
+
+```
+:app (com.empresa.caru)
+ ├── :domain (com.empresa.caru.domain)
+ │    ├── model/     — Domain models (User, FoodStand, etc.)
+ │    └── usecase/   — Use case classes
+ └── :data (com.empresa.caru.data)
+      └── repository/ — Repository interfaces/implementations
+
+:data depends on :domain
+:app depends on :domain and :data
+```
+
 ## Build Commands
 
 ```bash
-# Build debug APK
+# Build all modules
 ./gradlew assembleDebug
 
 # Build release APK
