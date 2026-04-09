@@ -27,20 +27,27 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.empresa.caru.R
+import com.empresa.caru.domain.repository.AuthRepository
+import com.empresa.caru.domain.repository.Result
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreateUserAccountScreen(
     onBackClick: () -> Unit,
-    onCreateClick: (nombre: String, correo: String, contrasena: String) -> Unit,
+    onSuccess: () -> Unit,
+    authRepository: AuthRepository,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
 ) {
     // ── Estado de los campos ─────────────────────────────────────────────────
-    var nombre      by remember { mutableStateOf("") }
-    var correo      by remember { mutableStateOf("") }
-    var contrasena  by remember { mutableStateOf("") }
+    var nombre       by remember { mutableStateOf("") }
+    var correo       by remember { mutableStateOf("") }
+    var contrasena   by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var isLoading    by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     // ── Colores según tema ───────────────────────────────────────────────────
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
@@ -63,6 +70,35 @@ fun CreateUserAccountScreen(
             contentScale       = ContentScale.Crop,
             alpha              = if (isDarkTheme) 0.06f else 0.06f
         )
+
+        // ── Overlay de carga ────────────────────────────────────────────────
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1A1A1A).copy(alpha = 0.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(56.dp),
+                        color = Color.White,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text       = "Estamos preparando\ntodo para ti",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        color      = Color.White,
+                        fontSize   = 20.sp,
+                        textAlign  = TextAlign.Center
+                    )
+                }
+            }
+        }
 
         // ── Botón regresar ───────────────────────────────────────────────────
         IconButton(
@@ -131,7 +167,8 @@ fun CreateUserAccountScreen(
                 placeholder   = "",
                 fieldBg       = fieldBg,
                 labelColor    = labelColor,
-                keyboardType  = KeyboardType.Text
+                keyboardType  = KeyboardType.Text,
+                enabled       = !isLoading
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -144,7 +181,8 @@ fun CreateUserAccountScreen(
                 placeholder   = "",
                 fieldBg       = fieldBg,
                 labelColor    = labelColor,
-                keyboardType  = KeyboardType.Email
+                keyboardType  = KeyboardType.Email,
+                enabled       = !isLoading
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -157,30 +195,49 @@ fun CreateUserAccountScreen(
                 showPassword    = showPassword,
                 onToggleVisible = { showPassword = !showPassword },
                 fieldBg         = fieldBg,
-                iconTint        = labelColor
+                iconTint        = labelColor,
+                enabled         = !isLoading
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
             // ── Botón Crear ──────────────────────────────────────────────────
             Button(
-                onClick  = { onCreateClick(nombre, correo, contrasena) },
-                modifier = Modifier
+                onClick  = {
+                    if (nombre.isBlank() || correo.isBlank() || contrasena.isBlank()) return@Button
+                    isLoading = true
+                    scope.launch {
+                        when (val result = authRepository.register(correo, contrasena, nombre)) {
+                            is Result.Success -> onSuccess()
+                            is Result.Error -> { isLoading = false }
+                        }
+                    }
+                },
+                modifier  = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape    = RoundedCornerShape(50.dp),
-                colors   = ButtonDefaults.buttonColors(
+                shape     = RoundedCornerShape(50.dp),
+                colors    = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFE53935),
                     contentColor   = Color.White
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                enabled   = !isLoading
             ) {
-                Text(
-                    text       = "Crear",
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize   = 20.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text       = "Crear",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 20.sp
+                    )
+                }
             }
         }
     }
@@ -207,7 +264,8 @@ private fun CaruTextField(
     placeholder: String,
     fieldBg: Color,
     labelColor: Color,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    enabled: Boolean = true
 ) {
     TextField(
         value         = value,
@@ -233,7 +291,8 @@ private fun CaruTextField(
             cursorColor                = Color(0xFFE53935)
         ),
         singleLine    = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        enabled       = enabled
     )
 }
 
@@ -244,7 +303,8 @@ private fun CaruPasswordField(
     showPassword: Boolean,
     onToggleVisible: () -> Unit,
     fieldBg: Color,
-    iconTint: Color
+    iconTint: Color,
+    enabled: Boolean = true
 ) {
     TextField(
         value               = value,
@@ -257,7 +317,7 @@ private fun CaruPasswordField(
         else
             PasswordVisualTransformation(),
         trailingIcon        = {
-            IconButton(onClick = onToggleVisible) {
+            IconButton(onClick = onToggleVisible, enabled = enabled) {
                 Icon(
                     imageVector        = if (showPassword)
                         Icons.Filled.Visibility
@@ -279,7 +339,8 @@ private fun CaruPasswordField(
             cursorColor             = Color(0xFFE53935)
         ),
         singleLine          = true,
-        keyboardOptions     = KeyboardOptions(keyboardType = KeyboardType.Password)
+        keyboardOptions     = KeyboardOptions(keyboardType = KeyboardType.Password),
+        enabled             = enabled
     )
 }
 

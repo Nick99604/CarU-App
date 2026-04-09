@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.empresa.caru.domain.repository.AuthRepository
+import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.ui.theme.CarUTheme
 
 
@@ -176,6 +178,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var isDarkTheme by remember { mutableStateOf(false) }
             val navController = rememberNavController()
+            val authRepository: AuthRepository = remember { AuthRepositoryImpl() }
 
             CarUTheme(darkTheme = isDarkTheme) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -194,13 +197,26 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        // Pantalla de enlace enviado
+                        composable("reset_email_sent") {
+                            ResetEmailSentScreen(
+                                onBackToLoginClick = {
+                                    navController.navigate("login") {
+                                        popUpTo("start") { inclusive = false }
+                                    }
+                                },
+                                isDarkTheme   = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding  = innerPadding
+                            )
+                        }
+
                         // Pantalla de recuperación de contraseña
                         composable("forgot_password") {
                             ForgotPasswordScreen(
                                 onBackClick = { navController.popBackStack() },
-                                onSendClick = { nombre, correo ->
-                                    Log.d("Nav", "Recuperar: $nombre | $correo")
-                                },
+                                onSuccess   = { navController.navigate("reset_email_sent") },
+                                authRepository = authRepository,
                                 isDarkTheme   = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
                                 innerPadding  = innerPadding
@@ -211,8 +227,13 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 onBackClick            = { navController.popBackStack() },
-                                onLoginClick           = { Log.d("Nav", "Login exitoso") },
+                                onLoginSuccess         = {
+                                    navController.navigate("home") {
+                                        popUpTo("start") { inclusive = false }
+                                    }
+                                },
                                 onForgotPasswordClick  = { navController.navigate("forgot_password") },
+                                authRepository         = authRepository,
                                 isDarkTheme            = isDarkTheme,
                                 onToggleTheme          = { isDarkTheme = !isDarkTheme },
                                 innerPadding           = innerPadding
@@ -223,9 +244,12 @@ class MainActivity : ComponentActivity() {
                         composable("register_station") {
                             RegisterStationScreen(
                                 onBackClick = { navController.popBackStack() },
-                                onCreateClick = { nombre, nombrePuesto, correo, contrasena ->
-                                    Log.d("Nav", "Registrar puesto: $nombre | $nombrePuesto | $correo")
+                                onSuccess   = {
+                                    navController.navigate("home") {
+                                        popUpTo("start") { inclusive = false }
+                                    }
                                 },
+                                authRepository = authRepository,
                                 isDarkTheme   = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
                                 innerPadding  = innerPadding
@@ -244,17 +268,25 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        // Pantalla principal (home)
+                        composable("home") {
+                            HomeScreen(
+                                isDarkTheme   = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding  = innerPadding
+                            )
+                        }
+
                         // Crear cuenta usuario
                         composable("create_user_account") {
                             CreateUserAccountScreen(
                                 onBackClick = { navController.popBackStack() },
-                                onCreateClick = { nombre, correo, contrasena ->
-                                    // Aquí irá tu lógica real (Firebase o API)
-                                    Log.d("Nav", "Crear cuenta: $nombre | $correo")
-
-                                    // Ejemplo futuro:
-                                    // navController.navigate("home")
+                                onSuccess   = {
+                                    navController.navigate("home") {
+                                        popUpTo("start") { inclusive = false }
+                                    }
                                 },
+                                authRepository = authRepository,
                                 isDarkTheme   = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
                                 innerPadding  = innerPadding
@@ -332,7 +364,8 @@ fun RegisterStationScreenLightPreview() {
     CarUTheme(darkTheme = false) {
         RegisterStationScreen(
             onBackClick = {},
-            onCreateClick = { _, _, _, _ -> },
+            onSuccess = {},
+            authRepository = AuthRepositoryImpl(),
             isDarkTheme   = false,
             onToggleTheme = {},
             innerPadding  = PaddingValues()
@@ -346,7 +379,8 @@ fun RegisterStationScreenDarkPreview() {
     CarUTheme(darkTheme = true) {
         RegisterStationScreen(
             onBackClick = {},
-            onCreateClick = { _, _, _, _ -> },
+            onSuccess = {},
+            authRepository = AuthRepositoryImpl(),
             isDarkTheme   = true,
             onToggleTheme = {},
             innerPadding  = PaddingValues()
@@ -360,7 +394,8 @@ fun ForgotPasswordScreenLightPreview() {
     CarUTheme(darkTheme = false) {
         ForgotPasswordScreen(
             onBackClick = {},
-            onSendClick = { _, _ -> },
+            onSuccess = {},
+            authRepository = AuthRepositoryImpl(),
             isDarkTheme   = false,
             onToggleTheme = {},
             innerPadding  = PaddingValues()
@@ -374,7 +409,34 @@ fun ForgotPasswordScreenDarkPreview() {
     CarUTheme(darkTheme = true) {
         ForgotPasswordScreen(
             onBackClick = {},
-            onSendClick = { _, _ -> },
+            onSuccess = {},
+            authRepository = AuthRepositoryImpl(),
+            isDarkTheme   = true,
+            onToggleTheme = {},
+            innerPadding  = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "ResetEmailSent - Modo Claro")
+@Composable
+fun ResetEmailSentScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        ResetEmailSentScreen(
+            onBackToLoginClick = {},
+            isDarkTheme   = false,
+            onToggleTheme = {},
+            innerPadding  = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "ResetEmailSent - Modo Oscuro")
+@Composable
+fun ResetEmailSentScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        ResetEmailSentScreen(
+            onBackToLoginClick = {},
             isDarkTheme   = true,
             onToggleTheme = {},
             innerPadding  = PaddingValues()

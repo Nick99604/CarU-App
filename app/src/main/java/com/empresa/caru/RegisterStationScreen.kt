@@ -22,15 +22,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.empresa.caru.domain.repository.AuthRepository
+import com.empresa.caru.domain.repository.Result
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterStationScreen(
     onBackClick: () -> Unit,
-    onCreateClick: (nombre: String, nombrePuesto: String, correo: String, contrasena: String) -> Unit,
+    onSuccess: () -> Unit,
+    authRepository: AuthRepository,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
@@ -40,6 +45,8 @@ fun RegisterStationScreen(
     var correo       by remember { mutableStateOf("") }
     var contrasena   by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var isLoading    by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor       = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
@@ -61,6 +68,35 @@ fun RegisterStationScreen(
             contentScale       = ContentScale.Crop,
             alpha              = if (isDarkTheme) 0.06f else 0.06f
         )
+
+        // ── Overlay de carga ────────────────────────────────────────────────
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1A1A1A).copy(alpha = 0.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(56.dp),
+                        color = Color.White,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text       = "Estamos preparando\ntodo para ti",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        color      = Color.White,
+                        fontSize   = 20.sp,
+                        textAlign  = TextAlign.Center
+                    )
+                }
+            }
+        }
 
         // Botón retroceder
         IconButton(
@@ -127,7 +163,8 @@ fun RegisterStationScreen(
                 placeholder   = "",
                 fieldBg       = fieldBg,
                 labelColor    = labelColor,
-                keyboardType  = KeyboardType.Text
+                keyboardType  = KeyboardType.Text,
+                enabled       = !isLoading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -140,7 +177,8 @@ fun RegisterStationScreen(
                 placeholder   = "",
                 fieldBg       = fieldBg,
                 labelColor    = labelColor,
-                keyboardType  = KeyboardType.Text
+                keyboardType  = KeyboardType.Text,
+                enabled       = !isLoading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -153,7 +191,8 @@ fun RegisterStationScreen(
                 placeholder   = "",
                 fieldBg       = fieldBg,
                 labelColor    = labelColor,
-                keyboardType  = KeyboardType.Email
+                keyboardType  = KeyboardType.Email,
+                enabled       = !isLoading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -166,14 +205,24 @@ fun RegisterStationScreen(
                 showPassword    = showPassword,
                 onToggleVisible = { showPassword = !showPassword },
                 fieldBg         = fieldBg,
-                iconTint        = labelColor
+                iconTint        = labelColor,
+                enabled         = !isLoading
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
             // Botón Crear
             Button(
-                onClick  = { onCreateClick(nombre, nombrePuesto, correo, contrasena) },
+                onClick  = {
+                    if (nombre.isBlank() || nombrePuesto.isBlank() || correo.isBlank() || contrasena.isBlank()) return@Button
+                    isLoading = true
+                    scope.launch {
+                        when (val result = authRepository.register(correo, contrasena, nombre)) {
+                            is Result.Success -> onSuccess()
+                            is Result.Error -> { isLoading = false }
+                        }
+                    }
+                },
                 modifier  = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -182,14 +231,23 @@ fun RegisterStationScreen(
                     containerColor = RedButtonColor,
                     contentColor   = Color.White
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                enabled   = !isLoading
             ) {
-                Text(
-                    text       = "Crear",
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize   = 20.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text       = "Crear",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 20.sp
+                    )
+                }
             }
         }
     }
@@ -216,7 +274,8 @@ private fun StationTextField(
     placeholder: String,
     fieldBg: Color,
     labelColor: Color,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value         = value,
@@ -242,7 +301,8 @@ private fun StationTextField(
             cursorColor           = RedButtonColor
         ),
         singleLine    = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        enabled       = enabled
     )
 }
 
@@ -253,7 +313,8 @@ private fun StationPasswordField(
     showPassword: Boolean,
     onToggleVisible: () -> Unit,
     fieldBg: Color,
-    iconTint: Color
+    iconTint: Color,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value               = value,
@@ -266,7 +327,7 @@ private fun StationPasswordField(
         else
             PasswordVisualTransformation(),
         trailingIcon        = {
-            IconButton(onClick = onToggleVisible) {
+            IconButton(onClick = onToggleVisible, enabled = enabled) {
                 Icon(
                     imageVector        = if (showPassword)
                         Icons.Filled.Visibility
@@ -288,6 +349,7 @@ private fun StationPasswordField(
             cursorColor             = RedButtonColor
         ),
         singleLine          = true,
-        keyboardOptions     = KeyboardOptions(keyboardType = KeyboardType.Password)
+        keyboardOptions     = KeyboardOptions(keyboardType = KeyboardType.Password),
+        enabled             = enabled
     )
 }

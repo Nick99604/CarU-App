@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "773949801863",
+    "project_id": "caru-project-38895",
+    "storage_bucket": "caru-project-38895.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773949801863:android:e324d1d1ebcde821173f22",
+        "android_client_info": {
+          "package_name": "com.empresa.caru"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYwLhJ-k-UTvI8vKlT2sJs9hIwQdfO3dM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

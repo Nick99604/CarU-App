@@ -20,19 +20,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.empresa.caru.R
+import com.empresa.caru.domain.repository.AuthRepository
+import com.empresa.caru.domain.repository.Result
+import kotlinx.coroutines.launch
 
 @Composable
 fun ForgotPasswordScreen(
     onBackClick: () -> Unit,
-    onSendClick: (nombre: String, correo: String) -> Unit,
+    onSuccess: () -> Unit,
+    authRepository: AuthRepository,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
 ) {
-    var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor       = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
@@ -54,6 +61,35 @@ fun ForgotPasswordScreen(
             contentScale       = ContentScale.Crop,
             alpha              = if (isDarkTheme) 0.06f else 0.06f
         )
+
+        // ── Overlay de carga ────────────────────────────────────────────────
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1A1A1A).copy(alpha = 0.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(56.dp),
+                        color = Color.White,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text       = "Enviando enlace...",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        color      = Color.White,
+                        fontSize   = 20.sp,
+                        textAlign  = TextAlign.Center
+                    )
+                }
+            }
+        }
 
         // Botón retroceder
         IconButton(
@@ -112,19 +148,6 @@ fun ForgotPasswordScreen(
                     .padding(bottom = 36.dp)
             )
 
-            // Campo Nombre
-            ForgotFieldLabel(text = "Nombre", color = textColor)
-            ForgotTextField(
-                value         = nombre,
-                onValueChange = { nombre = it },
-                placeholder   = "",
-                fieldBg       = fieldBg,
-                labelColor    = labelColor,
-                keyboardType  = KeyboardType.Text
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Campo Correo Electrónico
             ForgotFieldLabel(text = "Correo Electrónico", color = textColor)
             ForgotTextField(
@@ -133,14 +156,24 @@ fun ForgotPasswordScreen(
                 placeholder   = "",
                 fieldBg       = fieldBg,
                 labelColor    = labelColor,
-                keyboardType  = KeyboardType.Email
+                keyboardType  = KeyboardType.Email,
+                enabled       = !isLoading
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
             // Botón Enviar enlace
             Button(
-                onClick  = { onSendClick(nombre, correo) },
+                onClick  = {
+                    if (correo.isBlank()) return@Button
+                    isLoading = true
+                    scope.launch {
+                        when (val result = authRepository.sendPasswordReset(correo)) {
+                            is Result.Success -> onSuccess()
+                            is Result.Error -> { isLoading = false }
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -149,14 +182,23 @@ fun ForgotPasswordScreen(
                     containerColor = RedButtonColor,
                     contentColor   = Color.White
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                enabled  = !isLoading
             ) {
-                Text(
-                    text       = "Enviar enlace",
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize   = 20.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text       = "Enviar enlace",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 20.sp
+                    )
+                }
             }
         }
     }
@@ -183,7 +225,8 @@ private fun ForgotTextField(
     placeholder: String,
     fieldBg: Color,
     labelColor: Color,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value         = value,
@@ -209,6 +252,7 @@ private fun ForgotTextField(
             cursorColor           = RedButtonColor
         ),
         singleLine    = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        enabled       = enabled
     )
 }

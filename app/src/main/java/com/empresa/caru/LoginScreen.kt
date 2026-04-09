@@ -28,13 +28,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.empresa.caru.R
+import com.empresa.caru.domain.repository.AuthRepository
+import com.empresa.caru.domain.repository.Result
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun LoginScreen(
     onBackClick: () -> Unit,
-    onLoginClick: () -> Unit,
+    onLoginSuccess: () -> Unit,
     onForgotPasswordClick: () -> Unit,
+    authRepository: AuthRepository,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
@@ -42,11 +46,14 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
     val fieldBackground = if (isDarkTheme) Color(0xFF2A2A2A) else Color(0xFFE0E0E0)
     val hintColor = if (isDarkTheme) Color(0xFF888888) else Color(0xFF757575)
+    val iconBg = if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0)
 
     Box(
         modifier = Modifier
@@ -62,6 +69,35 @@ fun LoginScreen(
             alpha = if (isDarkTheme) 0.08f else 0.9f
         )
 
+        // ── Overlay de carga ────────────────────────────────────────────────
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1A1A1A).copy(alpha = 0.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(56.dp),
+                        color = Color.White,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text       = "Accediendo a tu cuenta...\nVerificando tus datos",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        color      = Color.White,
+                        fontSize   = 20.sp,
+                        textAlign  = TextAlign.Center
+                    )
+                }
+            }
+        }
+
         // Boton regresar
         IconButton(
             onClick = onBackClick,
@@ -70,7 +106,7 @@ fun LoginScreen(
                 .padding(top = 48.dp, start = 16.dp)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0))
+                .background(iconBg)
         ) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
@@ -88,7 +124,7 @@ fun LoginScreen(
                 .padding(top = 48.dp, end = 16.dp)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0))
+                .background(iconBg)
         ) {
             Icon(
                 imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
@@ -150,6 +186,7 @@ fun LoginScreen(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true,
+                enabled = !isLoading,
                 placeholder = {
                     Text("ejemplo@correo.com", color = hintColor, fontFamily = CaruFontFamily)
                 }
@@ -187,8 +224,9 @@ fun LoginScreen(
                     VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
+                enabled = !isLoading,
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }, enabled = !isLoading) {
                         Icon(
                             imageVector = if (passwordVisible)
                                 Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
@@ -204,7 +242,16 @@ fun LoginScreen(
 
             // Boton Iniciar
             Button(
-                onClick = onLoginClick,
+                onClick = {
+                    if (email.isBlank() || password.isBlank()) return@Button
+                    isLoading = true
+                    scope.launch {
+                        when (val result = authRepository.login(email, password)) {
+                            is Result.Success -> onLoginSuccess()
+                            is Result.Error -> { isLoading = false }
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
@@ -213,20 +260,29 @@ fun LoginScreen(
                     containerColor = Color(0xFFE53935),
                     contentColor = Color.White
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                enabled = !isLoading
             ) {
-                Text(
-                    text = "Iniciar",
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Iniciar",
+                        fontFamily = CaruFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Enlace olvidaste contrasena
-            TextButton(onClick = onForgotPasswordClick) {
+            TextButton(onClick = onForgotPasswordClick, enabled = !isLoading) {
                 Text(
                     text = "¿Olvidaste tu contrasena?",
                     fontFamily = CaruFontFamily,
