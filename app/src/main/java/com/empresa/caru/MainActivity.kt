@@ -332,10 +332,25 @@ class MainActivity : ComponentActivity() {
                             RegisterScreen(
                                 onBackClick      = { navController.popBackStack() },
                                 onBuscarClick    = { navController.navigate("create_user_account") },
-                                onRegistrarClick = { navController.navigate("register_station") },
+                                onRegistrarClick = { navController.navigate("register_station_user") },
                                 isDarkTheme      = isDarkTheme,
                                 onToggleTheme    = { isDarkTheme = !isDarkTheme },
                                 innerPadding     = innerPadding
+                            )
+                        }
+
+                        // Pantalla: Registrar puesto (usuario vendor)
+                        composable("register_station_user") {
+                            RegisterStationUserScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onSuccess   = {
+                                    navController.navigate("register_station") {
+                                        popUpTo("register_station_user") { inclusive = true }
+                                    }
+                                },
+                                isDarkTheme   = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding  = innerPadding
                             )
                         }
 
@@ -668,6 +683,34 @@ fun ImageUploadScreenDarkPreview() {
             viewModel = RegistrationViewModel(),
             onBackClick = {},
             onSaveClick = {},
+            isDarkTheme = true,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "RegisterStationUser - Modo Claro")
+@Composable
+fun RegisterStationUserScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        RegisterStationUserScreen(
+            onBackClick = {},
+            onSuccess = {},
+            isDarkTheme = false,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "RegisterStationUser - Modo Oscuro")
+@Composable
+fun RegisterStationUserScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        RegisterStationUserScreen(
+            onBackClick = {},
+            onSuccess = {},
             isDarkTheme = true,
             onToggleTheme = {},
             innerPadding = PaddingValues()

@@ -31,9 +31,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -53,82 +55,14 @@ fun RegisterStationUserScreen(
     var showPassword by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // Estado para navegación
-    var navigateToNext by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
+
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
     val labelColor = if (isDarkTheme) Color(0xFFAAAAAA) else Color(0xFF555555)
     val fieldBg = if (isDarkTheme) Color(0xFF2C2C2C) else Color(0xFFDEDEDE)
     val iconBg = if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0)
     val iconTint = if (isDarkTheme) Color.White else Color(0xFF333333)
-    val borderColor = if (isDarkTheme) Color(0xFF3A3A3A) else Color(0xFFE0E0E0)
-
-    // Efecto que detecta cuando debe navegar
-    LaunchedEffect(navigateToNext) {
-        if (navigateToNext) {
-            // Resetear y navegar
-            navigateToNext = false
-            onSuccess()
-        }
-    }
-
-    // Función para registrar
-    fun doRegistration() {
-        if (nombre.isBlank() || nombrePuesto.isBlank() || correo.isBlank() || contrasena.isBlank()) {
-            errorMessage = "Por favor completa todos los campos"
-            return
-        }
-        if (contrasena.length < 6) {
-            errorMessage = "La contraseña debe tener al menos 6 caracteres"
-            return
-        }
-
-        errorMessage = null
-        isLoading = true
-
-        scope.launch {
-            try {
-                val auth = FirebaseAuth.getInstance()
-
-                // Registro con Firebase Auth
-                val result = auth.createUserWithEmailAndPassword(correo, contrasena).await()
-
-                if (result.user != null) {
-                    // Guardar datos en Firestore
-                    val db = Firebase.firestore
-                    val userData = hashMapOf(
-                        "nombre" to nombre,
-                        "nombrePuesto" to nombrePuesto,
-                        "correo" to correo
-                    )
-
-                    db.collection("users")
-                        .document(result.user!!.uid)
-                        .set(userData)
-                        .await()
-
-                    // Registro exitoso - cerrar loading y navegar
-                    isLoading = false
-                    navigateToNext = true
-                } else {
-                    isLoading = false
-                    errorMessage = "Error al crear el usuario"
-                }
-            } catch (e: Exception) {
-                isLoading = false
-                errorMessage = when {
-                    e.message?.contains("email address is already in use", ignoreCase = true) == true ->
-                        "Este correo ya está registrado"
-                    e.message?.contains("weak password", ignoreCase = true) == true ->
-                        "La contraseña es muy corta"
-                    else -> e.message ?: "Error al registrar"
-                }
-            }
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -277,7 +211,80 @@ fun RegisterStationUserScreen(
 
             // Botón Crear
             Button(
-                onClick = { doRegistration() },
+                onClick = {
+                    // Validaciones
+                    if (nombre.isBlank() || nombrePuesto.isBlank() || correo.isBlank() || contrasena.isBlank()) {
+                        errorMessage = "Por favor completa todos los campos"
+                        return@Button
+                    }
+                    if (contrasena.length < 6) {
+                        errorMessage = "La contraseña debe tener al menos 6 caracteres"
+                        return@Button
+                    }
+
+                    errorMessage = null
+                    isLoading = true
+
+                    scope.launch {
+                        try {
+                            val auth = FirebaseAuth.getInstance()
+                            Log.d("RegisterStation", "Iniciando registro con correo: $correo")
+
+                            // Registro con Firebase Auth
+                            val result = auth.createUserWithEmailAndPassword(correo, contrasena).await()
+                            Log.d("RegisterStation", "Resultado Firebase Auth: ${result.user?.uid}")
+
+                            val user = result.user
+                            if (user != null) {
+                                Log.d("RegisterStation", "Usuario creado con UID: ${user.uid}")
+
+                                // Guardar datos en Firestore en segundo plano (no bloquea navegación)
+                                val db = Firebase.firestore
+                                val userData = hashMapOf(
+                                    "nombre" to nombre,
+                                    "nombrePuesto" to nombrePuesto,
+                                    "correo" to correo
+                                )
+
+                                // Lanzar guardado en Firestore sin esperar - la navegación es prioritaria
+                                launch {
+                                    try {
+                                        db.collection("users")
+                                            .document(user.uid)
+                                            .set(userData)
+                                            .await()
+                                        Log.d("RegisterStation", "Datos guardados en Firestore exitosamente")
+                                    } catch (e: Exception) {
+                                        Log.e("RegisterStation", "Error al guardar en Firestore (no crítico)", e)
+                                    }
+                                }
+
+                                Log.d("RegisterStation", "Navegando al siguiente módulo...")
+                                // Éxito - navegar inmediatamente al siguiente módulo
+                                onSuccess()
+                            } else {
+                                Log.e("RegisterStation", "result.user es null")
+                                errorMessage = "Error al crear el usuario. Intenta de nuevo."
+                            }
+                        } catch (e: CancellationException) {
+                            Log.e("RegisterStation", "Coroutine cancelada", e)
+                            errorMessage = "Operación cancelada. Intenta de nuevo."
+                        } catch (e: Exception) {
+                            Log.e("RegisterStation", "Error en registro", e)
+                            errorMessage = when {
+                                e.message?.contains("email address is already in use", ignoreCase = true) == true ->
+                                    "Este correo ya está registrado"
+                                e.message?.contains("weak password", ignoreCase = true) == true ->
+                                    "La contraseña es muy corta"
+                                e.message?.contains("invalid email", ignoreCase = true) == true ->
+                                    "Correo electrónico inválido"
+                                else -> e.message ?: "Error al registrar"
+                            }
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
