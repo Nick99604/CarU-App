@@ -65,6 +65,7 @@ fun LoginScreen(
     // Mensajes de error capturados en contexto composable
     val emailErrorMsg = stringResource(R.string.login_error_email)
     val passwordErrorMsg = stringResource(R.string.login_error_password)
+    val fillAllFieldsMsg = stringResource(R.string.please_fill_all_fields)
 
     Box(
         modifier = Modifier
@@ -328,7 +329,11 @@ fun LoginScreen(
             // Boton Iniciar
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) return@Button
+                    if (email.isBlank() || password.isBlank()) {
+                        emailError = if (email.isBlank()) fillAllFieldsMsg else null
+                        passwordError = if (password.isBlank()) fillAllFieldsMsg else null
+                        return@Button
+                    }
                     emailError = null
                     passwordError = null
                     isLoading = true

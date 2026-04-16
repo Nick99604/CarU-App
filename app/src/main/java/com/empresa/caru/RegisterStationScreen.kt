@@ -51,6 +51,7 @@ fun RegisterStationScreen(
     var contrasena   by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var isLoading    by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
@@ -59,6 +60,7 @@ fun RegisterStationScreen(
     val fieldBg         = if (isDarkTheme) Color(0xFF2C2C2C)  else Color(0xFFDEDEDE)
     val iconBg          = if (isDarkTheme) Color(0xFF333333)  else Color(0xFFE0E0E0)
     val iconTint        = if (isDarkTheme) Color.White        else Color(0xFF333333)
+    val fillAllFieldsMsg = stringResource(R.string.please_fill_all_fields)
 
     Box(
         modifier = Modifier
@@ -219,7 +221,11 @@ fun RegisterStationScreen(
             // Botón Crear
             Button(
                 onClick  = {
-                    if (nombre.isBlank() || nombrePuesto.isBlank() || correo.isBlank() || contrasena.isBlank()) return@Button
+                    if (nombre.isBlank() || nombrePuesto.isBlank() || correo.isBlank() || contrasena.isBlank()) {
+                        errorMessage = fillAllFieldsMsg
+                        return@Button
+                    }
+                    errorMessage = null
                     isLoading = true
                     scope.launch {
                         when (val result = authRepository.register(correo, contrasena, nombre)) {
@@ -253,6 +259,18 @@ fun RegisterStationScreen(
                         fontSize   = 20.sp
                     )
                 }
+            }
+
+            // Mensaje de error
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text       = errorMessage!!,
+                    fontFamily = CaruFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    color      = Color(0xFFFF5252),
+                    fontSize   = 14.sp
+                )
             }
         }
     }

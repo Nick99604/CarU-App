@@ -23,6 +23,7 @@
     <string name="forgot_password_link">¿Olvidaste tu contraseña?</string>
     <string name="login_error_email">El correo electrónico que has introducido no está conectado a una cuenta.</string>
     <string name="login_error_password">La contraseña que has introducido es incorrecta.</string>
+    <string name="please_fill_all_fields">Por favor completa todos los campos</string>
 
     <!-- Pantalla de olvido de contraseña -->
     <string name="forgot_password_title">Recuperar contraseña</string>

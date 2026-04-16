@@ -63,6 +63,7 @@ fun RegisterStationUserScreen(
     val fieldBg = if (isDarkTheme) Color(0xFF2C2C2C) else Color(0xFFDEDEDE)
     val iconBg = if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0)
     val iconTint = if (isDarkTheme) Color.White else Color(0xFF333333)
+    val fillAllFieldsMsg = stringResource(R.string.please_fill_all_fields)
 
     Box(
         modifier = Modifier
@@ -214,7 +215,7 @@ fun RegisterStationUserScreen(
                 onClick = {
                     // Validaciones
                     if (nombre.isBlank() || nombrePuesto.isBlank() || correo.isBlank() || contrasena.isBlank()) {
-                        errorMessage = "Por favor completa todos los campos"
+                        errorMessage = fillAllFieldsMsg
                         return@Button
                     }
                     if (contrasena.length < 6) {
