@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -62,7 +63,7 @@ fun ResetEmailSentScreen(
         ) {
             Icon(
                 imageVector        = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                contentDescription = stringResource(R.string.back_button_description),
                 tint               = iconTint,
                 modifier           = Modifier.size(22.dp)
             )
@@ -80,7 +81,7 @@ fun ResetEmailSentScreen(
         ) {
             Icon(
                 imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier           = Modifier.size(22.dp)
             )
@@ -105,7 +106,7 @@ fun ResetEmailSentScreen(
             ) {
                 Icon(
                     imageVector        = Icons.Filled.Check,
-                    contentDescription = "Enviado",
+                    contentDescription = stringResource(R.string.email_sent_check_description),
                     tint               = Color.White,
                     modifier           = Modifier.size(56.dp)
                 )
@@ -115,7 +116,7 @@ fun ResetEmailSentScreen(
 
             // Mensaje de éxito
             Text(
-                text       = "Tu enlace fue enviado\ncorrectamente",
+                text       = stringResource(R.string.email_sent_success),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color      = textColor,
@@ -127,7 +128,7 @@ fun ResetEmailSentScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text       = "Revisa tu correo electrónico y sigue\nlas instrucciones para restablecer tu\ncontraseña.",
+                text       = stringResource(R.string.email_sent_instructions),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Normal,
                 color      = if (isDarkTheme) Color(0xFFAAAAAA) else Color(0xFF555555),
@@ -153,7 +154,7 @@ fun ResetEmailSentScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text       = "Menú principal",
+                    text       = stringResource(R.string.main_menu_button),
                     fontFamily = CaruFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize   = 20.sp

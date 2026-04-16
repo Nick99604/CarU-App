@@ -1,3 +1,169 @@
 <resources>
     <string name="app_name">CarU</string>
+
+    <!-- Pantalla de inicio (MainActivity) -->
+    <string name="background_pattern_description">Patrón de fondo</string>
+    <string name="change_theme_description">Cambiar tema</string>
+    <string name="logo_caru_description">Logo CarU</string>
+    <string name="app_slogan">Lo mejor cerca de ti</string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="create_account_button">Crear cuenta</string>
+
+    <!-- Pantalla de login -->
+    <string name="login_title">Accede a tu cuenta para encontrar o registrar puestos de comida</string>
+    <string name="login_loading">Accediendo a tu cuenta…\nVerificando tus datos</string>
+    <string name="back_button_description">Regresar</string>
+    <string name="email_label">Correo electrónico</string>
+    <string name="email_placeholder">ejemplo@correo.com</string>
+    <string name="password_label">Contraseña</string>
+    <string name="show_password_description">Mostrar contraseña</string>
+    <string name="hide_password_description">Ocultar contraseña</string>
+    <string name="password_placeholder">••••••••</string>
+    <string name="login_button_text">Iniciar</string>
+    <string name="forgot_password_link">¿Olvidaste tu contraseña?</string>
+    <string name="login_error_email">El correo electrónico que has introducido no está conectado a una cuenta.</string>
+    <string name="login_error_password">La contraseña que has introducido es incorrecta.</string>
+
+    <!-- Pantalla de olvido de contraseña -->
+    <string name="forgot_password_title">Recuperar contraseña</string>
+    <string name="sending_link_loading">Enviando enlace…</string>
+    <string name="send_link_button">Enviar enlace</string>
+
+    <!-- Pantalla de email enviado -->
+    <string name="email_sent_success">Tu enlace fue enviado\ncorrectamente</string>
+    <string name="email_sent_instructions">Revisa tu correo electrónico y sigue\nlas instrucciones para restablecer tu\ncontraseña.</string>
+    <string name="email_sent_check_description">Enviado</string>
+    <string name="main_menu_button">Menú principal</string>
+
+    <!-- Pantalla de registro (selección de rol) -->
+    <string name="register_title">Elige una opción\npara continuar</string>
+    <string name="buyer_card_description">Crea una cuenta y encuentra tu puesto de comida favorito</string>
+    <string name="search_food_stalls_button">Buscar puestos de comida</string>
+    <string name="vendor_card_description">Comparte tu magia</string>
+    <string name="register_food_stall_button">Registra tu puesto</string>
+
+    <!-- Pantalla de crear cuenta usuario -->
+    <string name="create_user_account_title">Crea una cuenta\npara ti</string>
+    <string name="name_label">Nombre</string>
+    <string name="full_name_label">Nombre completo</string>
+    <string name="name_placeholder">Tu nombre</string>
+    <string name="create_user_loading">Estamos preparando\ntodo para ti</string>
+    <string name="create_user_button">Crear</string>
+
+    <!-- Pantalla de registrar puesto -->
+    <string name="register_station_title">Registra tu puesto</string>
+    <string name="station_name_label">Nombre del puesto</string>
+    <string name="station_name_placeholder">Ej: Taquería El Güero</string>
+    <string name="register_station_loading">Estamos preparando\ntodo para ti</string>
+    <string name="register_station_button">Crear</string>
+
+    <!-- Pantalla de detalles del puesto -->
+    <string name="registration_station_title">Detalles de mi puesto</string>
+    <string name="food_type_label">Tipo de comida</string>
+    <string name="food_type_placeholder">Ej: Tacos, Hamburguesas…</string>
+    <string name="information_label">Información</string>
+    <string name="information_placeholder">Cuéntanos más sobre tu puesto</string>
+    <string name="location_label">Ubicación</string>
+    <string name="location_placeholder">Dirección de tu puesto</string>
+    <string name="schedule_label">Horario</string>
+    <string name="schedule_placeholder">Ej: 9:00 AM - 6:00 PM</string>
+    <string name="upload_image_label">Subir imagen</string>
+    <string name="upload_image_placeholder">Selecciona una imagen</string>
+    <string name="continue_button">Continuar</string>
+    <string name="save_button">Guardar</string>
+    <string name="cancel_button">Cancelar</string>
+    <string name="save_and_continue">Guardar y continuar</string>
+
+    <!-- Menú de registro de puesto -->
+    <string name="registration_menu_subtitle">Completa cada sección para registrar tu puesto</string>
+    <string name="sections_completed">secciones completadas</string>
+    <string name="section_food_type">Tipo de comida</string>
+    <string name="section_food_type_desc">Selecciona los tipos de comida</string>
+    <string name="section_information">Información</string>
+    <string name="section_information_desc">Descripción, teléfono y precio</string>
+    <string name="section_location">Ubicación</string>
+    <string name="section_location_desc">Dirección de tu puesto</string>
+    <string name="section_schedule">Horario</string>
+    <string name="section_schedule_desc">Días y horarios de atención</string>
+    <string name="section_photo">Foto del puesto</string>
+    <string name="section_photo_desc">Añade una imagen de tu puesto</string>
+    <string name="section_completed">Completado</string>
+    <string name="finish_registration">Finalizar registro</string>
+    <string name="complete_all_sections">Completa todas las secciones</string>
+
+    <!-- Pantalla: Tipo de comida -->
+    <string name="food_type_screen_title">Tipo de comida</string>
+    <string name="food_type_subtitle">Selecciona los tipos de comida que ofrece tu puesto</string>
+    <string name="other_type_label">Otro tipo</string>
+    <string name="other_type_placeholder">Escribe otro tipo de comida</string>
+
+    <!-- Pantalla: Info del puesto -->
+    <string name="station_info_screen_title">Información del puesto</string>
+    <string name="station_info_subtitle">Cuéntanos más sobre tu negocio</string>
+    <string name="description_label">Descripción</string>
+    <string name="description_placeholder">Describe qué hace especial a tu puesto…</string>
+    <string name="contact_phone_label">Teléfono de contacto</string>
+    <string name="contact_phone_placeholder">Ej: 55 1234 5678</string>
+    <string name="average_price_label">Precio promedio</string>
+    <string name="price_min_placeholder">Mín $</string>
+    <string name="price_max_placeholder">Máx $</string>
+
+    <!-- Pantalla: Selección de ubicación -->
+    <string name="location_selection_screen_title">Ubicación</string>
+    <string name="location_selection_subtitle">¿Dónde se encuentra tu puesto?</string>
+    <string name="map_placeholder_text">Mapa interactivo</string>
+    <string name="map_placeholder_subtext">(En desarrollo)</string>
+    <string name="exact_address_label">Dirección exacta</string>
+    <string name="exact_address_placeholder">Calle, número, colonia, ciudad</string>
+
+    <!-- Pantalla: Horario -->
+    <string name="schedule_screen_title">Horario</string>
+    <string name="schedule_subtitle">¿En qué horarios atiende tu puesto?</string>
+    <string name="all_days_button">Todos</string>
+    <string name="weekdays_button">Laborales</string>
+    <string name="weekends_button">Fines</string>
+    <string name="monday_label">Lunes</string>
+    <string name="tuesday_label">Martes</string>
+    <string name="wednesday_label">Miércoles</string>
+    <string name="thursday_label">Jueves</string>
+    <string name="friday_label">Viernes</string>
+    <string name="saturday_label">Sábado</string>
+    <string name="sunday_label">Domingo</string>
+    <string name="start_time_label">Apertura</string>
+    <string name="end_time_label">Cierre</string>
+    <string name="start_time_placeholder">Hora inicio</string>
+    <string name="end_time_placeholder">Hora fin</string>
+    <string name="select_time_title">Seleccionar hora</string>
+
+    <!-- Pantalla: Subir imagen -->
+    <string name="image_upload_screen_title">Foto del puesto</string>
+    <string name="image_upload_subtitle">Añade una foto de tu puesto para que\nlos clientes puedan reconocerlo</string>
+    <string name="take_photo_option">Tomar foto</string>
+    <string name="take_photo_description">Usa la cámara</string>
+    <string name="upload_image_option">Subir imagen</string>
+    <string name="upload_image_description">Desde archivos</string>
+    <string name="gallery_option">Galería</string>
+    <string name="gallery_description">Desde tu álbum</string>
+    <string name="image_selected_text">Imagen seleccionada</string>
+    <string name="no_image_selected_text">Sin imagen</string>
+    <string name="image_options_title">Funcionalidad</string>
+    <string name="image_options_message">Esta funcionalidad se implementará con el módulo de cámara/galería del dispositivo.</string>
+
+    <!-- Pantalla principal (Home) -->
+    <string name="welcome_message">¡Bienvenido a CarU!</string>
+    <string name="home_placeholder">Pantalla principal (pendiente)</string>
+
+    <!-- Previews -->
+    <string name="preview_light_mode">Modo Claro</string>
+    <string name="preview_dark_mode">Modo Oscuro</string>
+    <string name="preview_start_light">Inicio - Modo Claro</string>
+    <string name="preview_start_dark">Inicio - Modo Oscuro</string>
+    <string name="preview_register_light">Register - Modo Claro</string>
+    <string name="preview_register_dark">Register - Modo Oscuro</string>
+    <string name="preview_station_light">RegisterStation - Modo Claro</string>
+    <string name="preview_station_dark">RegisterStation - Modo Oscuro</string>
+    <string name="preview_forgot_light">ForgotPassword - Modo Claro</string>
+    <string name="preview_forgot_dark">ForgotPassword - Modo Oscuro</string>
+    <string name="preview_reset_light">ResetEmailSent - Modo Claro</string>
+    <string name="preview_reset_dark">ResetEmailSent - Modo Oscuro</string>
 </resources>

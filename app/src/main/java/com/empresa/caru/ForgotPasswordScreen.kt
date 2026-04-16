@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.empresa.caru.R
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.domain.repository.Result
@@ -80,7 +81,7 @@ fun ForgotPasswordScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text       = "Enviando enlace...",
+                        text       = stringResource(R.string.sending_link_loading),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Normal,
                         color      = Color.White,
@@ -103,7 +104,7 @@ fun ForgotPasswordScreen(
         ) {
             Icon(
                 imageVector        = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                contentDescription = stringResource(R.string.back_button_description),
                 tint               = iconTint,
                 modifier           = Modifier.size(22.dp)
             )
@@ -121,7 +122,7 @@ fun ForgotPasswordScreen(
         ) {
             Icon(
                 imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier           = Modifier.size(22.dp)
             )
@@ -138,7 +139,7 @@ fun ForgotPasswordScreen(
         ) {
             // Título
             Text(
-                text       = "Recuperar contraseña",
+                text       = stringResource(R.string.forgot_password_title),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color      = textColor,
@@ -149,7 +150,7 @@ fun ForgotPasswordScreen(
             )
 
             // Campo Correo Electrónico
-            ForgotFieldLabel(text = "Correo Electrónico", color = textColor)
+            ForgotFieldLabel(text = stringResource(R.string.email_label), color = textColor)
             ForgotTextField(
                 value         = correo,
                 onValueChange = { correo = it },
@@ -193,7 +194,7 @@ fun ForgotPasswordScreen(
                     )
                 } else {
                     Text(
-                        text       = "Enviar enlace",
+                        text       = stringResource(R.string.send_link_button),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize   = 20.sp

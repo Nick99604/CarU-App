@@ -5,9 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Visibility
@@ -18,8 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +31,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.empresa.caru.R
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.domain.repository.Result
 import kotlinx.coroutines.launch
@@ -87,7 +92,7 @@ fun RegisterStationScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text       = "Estamos preparando\ntodo para ti",
+                        text       = stringResource(R.string.register_station_loading),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Normal,
                         color      = Color.White,
@@ -109,8 +114,8 @@ fun RegisterStationScreen(
                 .background(iconBg)
         ) {
             Icon(
-                imageVector        = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.back_button_description),
                 tint               = iconTint,
                 modifier           = Modifier.size(22.dp)
             )
@@ -128,7 +133,7 @@ fun RegisterStationScreen(
         ) {
             Icon(
                 imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier           = Modifier.size(22.dp)
             )
@@ -145,7 +150,7 @@ fun RegisterStationScreen(
         ) {
             // Título
             Text(
-                text       = "Registra tu puesto",
+                text       = stringResource(R.string.register_station_title),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color      = textColor,
@@ -156,7 +161,7 @@ fun RegisterStationScreen(
             )
 
             // Campo Nombre
-            StationFieldLabel(text = "Nombre", color = textColor)
+            StationFieldLabel(text = stringResource(R.string.name_label), color = textColor)
             StationTextField(
                 value         = nombre,
                 onValueChange = { nombre = it },
@@ -170,7 +175,7 @@ fun RegisterStationScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Campo Nombre del puesto
-            StationFieldLabel(text = "Nombre del puesto", color = textColor)
+            StationFieldLabel(text = stringResource(R.string.station_name_label), color = textColor)
             StationTextField(
                 value         = nombrePuesto,
                 onValueChange = { nombrePuesto = it },
@@ -184,7 +189,7 @@ fun RegisterStationScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Campo Correo Electrónico
-            StationFieldLabel(text = "Correo Electrónico", color = textColor)
+            StationFieldLabel(text = stringResource(R.string.email_label), color = textColor)
             StationTextField(
                 value         = correo,
                 onValueChange = { correo = it },
@@ -198,7 +203,7 @@ fun RegisterStationScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Campo Contraseña
-            StationFieldLabel(text = "Contraseña", color = textColor)
+            StationFieldLabel(text = stringResource(R.string.password_label), color = textColor)
             StationPasswordField(
                 value           = contrasena,
                 onValueChange   = { contrasena = it },
@@ -242,7 +247,7 @@ fun RegisterStationScreen(
                     )
                 } else {
                     Text(
-                        text       = "Crear",
+                        text       = stringResource(R.string.register_station_button),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize   = 20.sp
@@ -333,7 +338,7 @@ private fun StationPasswordField(
                         Icons.Filled.Visibility
                     else
                         Icons.Filled.VisibilityOff,
-                    contentDescription = if (showPassword) "Ocultar" else "Mostrar",
+                    contentDescription = if (showPassword) stringResource(R.string.hide_password_description) else stringResource(R.string.show_password_description),
                     tint               = iconTint
                 )
             }

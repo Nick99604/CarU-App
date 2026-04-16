@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,19 +35,19 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text       = "¡Bienvenido a CarU!",
+                text = stringResource(R.string.welcome_message),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
-                color      = textColor,
-                fontSize   = 28.sp
+                color = textColor,
+                fontSize = 28.sp
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text       = "Pantalla principal (pendiente)",
+                text = stringResource(R.string.home_placeholder),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Normal,
-                color      = if (isDarkTheme) Color(0xFFAAAAAA) else Color(0xFF555555),
-                fontSize   = 16.sp
+                color = if (isDarkTheme) Color(0xFFAAAAAA) else Color(0xFF555555),
+                fontSize = 16.sp
             )
         }
     }

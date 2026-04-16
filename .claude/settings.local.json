@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew clean *)",
+      "Bash(head -676 C:/Users/Nick/AndroidStudioProjects/CarU/app/src/main/java/com/empresa/caru/MainActivity.kt)",
+      "Bash(mv /tmp/main_temp.kt C:/Users/Nick/AndroidStudioProjects/CarU/app/src/main/java/com/empresa/caru/MainActivity.kt)"
+    ]
+  }
+}

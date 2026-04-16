@@ -2,12 +2,14 @@ package com.empresa.caru
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Visibility
@@ -18,8 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -27,7 +32,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.empresa.caru.R
+import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.domain.repository.Result
 import kotlinx.coroutines.launch
@@ -47,6 +52,8 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
@@ -54,6 +61,10 @@ fun LoginScreen(
     val fieldBackground = if (isDarkTheme) Color(0xFF2A2A2A) else Color(0xFFE0E0E0)
     val hintColor = if (isDarkTheme) Color(0xFF888888) else Color(0xFF757575)
     val iconBg = if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0)
+
+    // Mensajes de error capturados en contexto composable
+    val emailErrorMsg = stringResource(R.string.login_error_email)
+    val passwordErrorMsg = stringResource(R.string.login_error_password)
 
     Box(
         modifier = Modifier
@@ -63,7 +74,7 @@ fun LoginScreen(
         // Patron de fondo
         Image(
             painter = painterResource(id = R.drawable.background_food_pattern),
-            contentDescription = "Patron de fondo",
+            contentDescription = stringResource(R.string.background_pattern_description),
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop,
             alpha = if (isDarkTheme) 0.08f else 0.9f
@@ -87,12 +98,12 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text       = "Accediendo a tu cuenta...\nVerificando tus datos",
+                        text = stringResource(R.string.login_loading),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Normal,
-                        color      = Color.White,
-                        fontSize   = 20.sp,
-                        textAlign  = TextAlign.Center
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -109,8 +120,8 @@ fun LoginScreen(
                 .background(iconBg)
         ) {
             Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.back_button_description),
                 tint = if (isDarkTheme) Color.White else Color(0xFF333333),
                 modifier = Modifier.size(22.dp)
             )
@@ -128,7 +139,7 @@ fun LoginScreen(
         ) {
             Icon(
                 imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier = Modifier.size(22.dp)
             )
@@ -145,7 +156,7 @@ fun LoginScreen(
         ) {
             // Titulo
             Text(
-                text = "Accede a tu cuenta para encontrar o registrar puestos de comida",
+                text = stringResource(R.string.login_title),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -158,7 +169,7 @@ fun LoginScreen(
 
             // Etiqueta correo
             Text(
-                text = "Correo Electronico",
+                text = stringResource(R.string.email_label),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -169,32 +180,65 @@ fun LoginScreen(
             )
 
             // Campo correo
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+            val emailBackgroundColor = if (emailError != null) {
+                Color(0x33FF0000) // Rojo suave con baja opacidad
+            } else {
+                fieldBackground
+            }
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = fieldBackground,
-                    focusedContainerColor = fieldBackground,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color(0xFFE53935),
-                    unfocusedTextColor = textColor,
-                    focusedTextColor = textColor
-                ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true,
-                enabled = !isLoading,
-                placeholder = {
-                    Text("ejemplo@correo.com", color = hintColor, fontFamily = CaruFontFamily)
-                }
-            )
+                    .padding(bottom = 4.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(emailBackgroundColor)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                BasicTextField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        emailError = null
+                    },
+                    enabled = !isLoading,
+                    textStyle = TextStyle(
+                        color = textColor,
+                        fontFamily = CaruFontFamily,
+                        fontSize = 16.sp
+                    ),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    cursorBrush = SolidColor(RedButtonColor),
+                    decorationBox = { innerTextField ->
+                        if (email.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.email_placeholder),
+                                color = hintColor,
+                                fontFamily = CaruFontFamily,
+                                fontSize = 16.sp
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+            }
+
+            // Error de correo
+            if (emailError != null) {
+                Text(
+                    text = emailError!!,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // Etiqueta contrasena
             Text(
-                text = "Contrasena",
+                text = stringResource(R.string.password_label),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -205,50 +249,106 @@ fun LoginScreen(
             )
 
             // Campo contrasena
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
+            val passwordBackgroundColor = if (passwordError != null) {
+                Color(0x33FF0000) // Rojo suave con baja opacidad
+            } else {
+                fieldBackground
+            }
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = fieldBackground,
-                    focusedContainerColor = fieldBackground,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color(0xFFE53935),
-                    unfocusedTextColor = textColor,
-                    focusedTextColor = textColor
-                ),
-                visualTransformation = if (passwordVisible)
-                    VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                singleLine = true,
-                enabled = !isLoading,
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }, enabled = !isLoading) {
-                        Icon(
-                            imageVector = if (passwordVisible)
-                                Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                            contentDescription = "Mostrar contrasena",
-                            tint = hintColor
-                        )
-                    }
-                },
-                placeholder = {
-                    Text("••••••••", color = hintColor, fontFamily = CaruFontFamily)
+                    .padding(bottom = 4.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(passwordBackgroundColor)
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    BasicTextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            passwordError = null
+                        },
+                        enabled = !isLoading,
+                        textStyle = TextStyle(
+                            color = textColor,
+                            fontFamily = CaruFontFamily,
+                            fontSize = 16.sp
+                        ),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        cursorBrush = SolidColor(RedButtonColor),
+                        visualTransformation = if (passwordVisible)
+                            VisualTransformation.None else PasswordVisualTransformation(),
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (password.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.password_placeholder),
+                                        color = hintColor,
+                                        fontFamily = CaruFontFamily,
+                                        fontSize = 16.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
                 }
-            )
+                IconButton(
+                    onClick = { passwordVisible = !passwordVisible },
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        imageVector = if (passwordVisible)
+                            Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = stringResource(R.string.show_password_description),
+                        tint = hintColor
+                    )
+                }
+            }
+
+            // Error de contrasena
+            if (passwordError != null) {
+                Text(
+                    text = passwordError!!,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // Boton Iniciar
             Button(
                 onClick = {
                     if (email.isBlank() || password.isBlank()) return@Button
+                    emailError = null
+                    passwordError = null
                     isLoading = true
                     scope.launch {
                         when (val result = authRepository.login(email, password)) {
                             is Result.Success -> onLoginSuccess()
-                            is Result.Error -> { isLoading = false }
+                            is Result.Error -> {
+                                isLoading = false
+                                when (result.message) {
+                                    AuthRepositoryImpl.ERROR_EMAIL_NOT_FOUND -> {
+                                        emailError = emailErrorMsg
+                                    }
+                                    AuthRepositoryImpl.ERROR_WRONG_PASSWORD -> {
+                                        passwordError = passwordErrorMsg
+                                    }
+                                    else -> {
+                                        emailError = result.message
+                                    }
+                                }
+                            }
                         }
                     }
                 },
@@ -271,7 +371,7 @@ fun LoginScreen(
                     )
                 } else {
                     Text(
-                        text = "Iniciar",
+                        text = stringResource(R.string.login_button_text),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
@@ -284,7 +384,7 @@ fun LoginScreen(
             // Enlace olvidaste contrasena
             TextButton(onClick = onForgotPasswordClick, enabled = !isLoading) {
                 Text(
-                    text = "¿Olvidaste tu contrasena?",
+                    text = stringResource(R.string.forgot_password_link),
                     fontFamily = CaruFontFamily,
                     fontWeight = FontWeight.Bold,
                     color = if (isDarkTheme) Color(0xFFAAAAAA) else Color(0xFF1A1A1A),

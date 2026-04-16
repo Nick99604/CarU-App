@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -65,7 +66,7 @@ fun RegisterScreen(
         ) {
             Icon(
                 imageVector        = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                contentDescription = stringResource(R.string.back_button_description),
                 tint               = iconTint,
                 modifier           = Modifier.size(22.dp)
             )
@@ -83,7 +84,7 @@ fun RegisterScreen(
         ) {
             Icon(
                 imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier           = Modifier.size(22.dp)
             )
@@ -101,7 +102,7 @@ fun RegisterScreen(
 
             // Título
             Text(
-                text       = "Elige una opción\npara continuar",
+                text       = stringResource(R.string.register_title),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color      = textColor,
@@ -115,7 +116,7 @@ fun RegisterScreen(
             // ── Tarjeta 1 ────────────────────────────────────────────────
             OptionCard(
                 emoji       = "🍔",
-                description = "\"Crea una cuenta y encuentra tu puesto de comida favorito\"",
+                description = stringResource(R.string.buyer_card_description),
                 cardBg      = cardBg,
                 sloganColor = sloganColor
             )
@@ -136,7 +137,7 @@ fun RegisterScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text       = "Buscar puestos de comida",
+                    text       = stringResource(R.string.search_food_stalls_button),
                     fontFamily = CaruFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize   = 17.sp
@@ -148,7 +149,7 @@ fun RegisterScreen(
             // ── Tarjeta 2 ────────────────────────────────────────────────
             OptionCard(
                 emoji       = "🛺",
-                description = "\"Comparte tu magia\"",
+                description = stringResource(R.string.vendor_card_description),
                 cardBg      = cardBg,
                 sloganColor = sloganColor
             )
@@ -169,7 +170,7 @@ fun RegisterScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text       = "Registra tu puesto",
+                    text       = stringResource(R.string.register_food_stall_button),
                     fontFamily = CaruFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize   = 17.sp

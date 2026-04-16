@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.res.stringResource
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.ui.theme.CarUTheme
@@ -84,7 +85,7 @@ fun CarUAppStartScreen(
     ) {
        Image(
             painter            = painterResource(id = R.drawable.background_food_pattern),
-            contentDescription = "Patron de fondo",
+            contentDescription = stringResource(R.string.background_pattern_description),
             modifier           = Modifier.matchParentSize(),
             contentScale       = ContentScale.Crop,
             alpha              = if (isDarkTheme) 0.08f else 0.9f
@@ -101,7 +102,7 @@ fun CarUAppStartScreen(
         ) {
             Icon(
                 imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier           = Modifier.size(22.dp)
             )
@@ -123,7 +124,7 @@ fun CarUAppStartScreen(
             ) {
                 Image(
                     painter            = painterResource(id = R.drawable.logo_caru),
-                    contentDescription = "Logo CarU",
+                    contentDescription = stringResource(R.string.logo_caru_description),
                     modifier           = Modifier
                         .size(300.dp)
                         .clip(CircleShape)
@@ -131,7 +132,7 @@ fun CarUAppStartScreen(
             }
 
             Text(
-                text       = "CarU",
+                text       = stringResource(R.string.app_name),
                 fontFamily = CaruTitleFontFamily,
                 fontWeight = FontWeight.Bold,
                 color      = Color(0xFFF60606),
@@ -141,7 +142,7 @@ fun CarUAppStartScreen(
             )
 
             Text(
-                text       = "\"Lo mejor cerca de ti\"",
+                text       = stringResource(R.string.app_slogan),
                 fontFamily = CaruFontFamily,
                 style      = MaterialTheme.typography.bodyLarge,
                 color      = sloganColor,
@@ -152,7 +153,7 @@ fun CarUAppStartScreen(
             )
 
             AppButton(
-                text     = "Iniciar sesion",
+                text     = stringResource(R.string.login_button),
                 onClick  = onLoginClick,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -160,7 +161,7 @@ fun CarUAppStartScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             AppButton(
-                text        = "Crear cuenta",
+                text        = stringResource(R.string.create_account_button),
                 onClick     = onCreateAccountClick,
                 modifier    = Modifier.fillMaxWidth(),
                 buttonColor = RedButtonColor
@@ -179,6 +180,7 @@ class MainActivity : ComponentActivity() {
             var isDarkTheme by remember { mutableStateOf(false) }
             val navController = rememberNavController()
             val authRepository: AuthRepository = remember { AuthRepositoryImpl() }
+            val registrationViewModel: RegistrationViewModel = remember { RegistrationViewModel() }
 
             CarUTheme(darkTheme = isDarkTheme) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -190,7 +192,7 @@ class MainActivity : ComponentActivity() {
                         composable("start") {
                             CarUAppStartScreen(
                                 onLoginClick         = { navController.navigate("login") },
-                                onCreateAccountClick = { navController.navigate("register") }, // ← NUEVO
+                                onCreateAccountClick = { navController.navigate("register") },
                                 innerPadding         = innerPadding,
                                 isDarkTheme          = isDarkTheme,
                                 onToggleTheme        = { isDarkTheme = !isDarkTheme }
@@ -240,19 +242,88 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Pantalla de registro de puesto
+                        // Pantalla de registro de puesto (Menú principal)
                         composable("register_station") {
-                            RegisterStationScreen(
+                            RegistrationStationScreen(
+                                viewModel = registrationViewModel,
                                 onBackClick = { navController.popBackStack() },
-                                onSuccess   = {
+                                onFoodTypeClick = { navController.navigate("food_type") },
+                                onInfoClick = { navController.navigate("station_info") },
+                                onLocationClick = { navController.navigate("location_selection") },
+                                onScheduleClick = { navController.navigate("schedule") },
+                                onImageClick = { navController.navigate("image_upload") },
+                                onSuccess = {
                                     navController.navigate("home") {
                                         popUpTo("start") { inclusive = false }
                                     }
                                 },
-                                authRepository = authRepository,
-                                isDarkTheme   = isDarkTheme,
+                                isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding  = innerPadding
+                                innerPadding = innerPadding
+                            )
+                        }
+
+                        // Pantalla: Tipo de comida
+                        composable("food_type") {
+                            FoodTypeScreen(
+                                viewModel = registrationViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onContinueClick = { navController.navigate("station_info") },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
+                        // Pantalla: Info del puesto
+                        composable("station_info") {
+                            StationInfoScreen(
+                                viewModel = registrationViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onContinueClick = { navController.navigate("location_selection") },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
+                        // Pantalla: Selección de ubicación
+                        composable("location_selection") {
+                            LocationSelectionScreen(
+                                viewModel = registrationViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onContinueClick = { navController.navigate("schedule") },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
+                        // Pantalla: Horario
+                        composable("schedule") {
+                            ScheduleScreen(
+                                viewModel = registrationViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onContinueClick = { navController.navigate("image_upload") },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
+                        // Pantalla: Subir imagen
+                        composable("image_upload") {
+                            ImageUploadScreen(
+                                viewModel = registrationViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onSaveClick = {
+                                    navController.navigate("home") {
+                                        popUpTo("start") { inclusive = false }
+                                    }
+                                },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
                             )
                         }
 
@@ -362,13 +433,18 @@ fun RegisterScreenDarkPreview() {
 @Composable
 fun RegisterStationScreenLightPreview() {
     CarUTheme(darkTheme = false) {
-        RegisterStationScreen(
+        RegistrationStationScreen(
+            viewModel = RegistrationViewModel(),
             onBackClick = {},
+            onFoodTypeClick = {},
+            onInfoClick = {},
+            onLocationClick = {},
+            onScheduleClick = {},
+            onImageClick = {},
             onSuccess = {},
-            authRepository = AuthRepositoryImpl(),
-            isDarkTheme   = false,
+            isDarkTheme = false,
             onToggleTheme = {},
-            innerPadding  = PaddingValues()
+            innerPadding = PaddingValues()
         )
     }
 }
@@ -377,13 +453,18 @@ fun RegisterStationScreenLightPreview() {
 @Composable
 fun RegisterStationScreenDarkPreview() {
     CarUTheme(darkTheme = true) {
-        RegisterStationScreen(
+        RegistrationStationScreen(
+            viewModel = RegistrationViewModel(),
             onBackClick = {},
+            onFoodTypeClick = {},
+            onInfoClick = {},
+            onLocationClick = {},
+            onScheduleClick = {},
+            onImageClick = {},
             onSuccess = {},
-            authRepository = AuthRepositoryImpl(),
-            isDarkTheme   = true,
+            isDarkTheme = true,
             onToggleTheme = {},
-            innerPadding  = PaddingValues()
+            innerPadding = PaddingValues()
         )
     }
 }
@@ -440,6 +521,156 @@ fun ResetEmailSentScreenDarkPreview() {
             isDarkTheme   = true,
             onToggleTheme = {},
             innerPadding  = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "FoodType - Modo Claro")
+@Composable
+fun FoodTypeScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        FoodTypeScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = false,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "FoodType - Modo Oscuro")
+@Composable
+fun FoodTypeScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        FoodTypeScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = true,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "StationInfo - Modo Claro")
+@Composable
+fun StationInfoScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        StationInfoScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = false,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "StationInfo - Modo Oscuro")
+@Composable
+fun StationInfoScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        StationInfoScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = true,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "LocationSelection - Modo Claro")
+@Composable
+fun LocationSelectionScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        LocationSelectionScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = false,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "LocationSelection - Modo Oscuro")
+@Composable
+fun LocationSelectionScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        LocationSelectionScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = true,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Schedule - Modo Claro")
+@Composable
+fun ScheduleScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        ScheduleScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = false,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Schedule - Modo Oscuro")
+@Composable
+fun ScheduleScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        ScheduleScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onContinueClick = {},
+            isDarkTheme = true,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "ImageUpload - Modo Claro")
+@Composable
+fun ImageUploadScreenLightPreview() {
+    CarUTheme(darkTheme = false) {
+        ImageUploadScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onSaveClick = {},
+            isDarkTheme = false,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "ImageUpload - Modo Oscuro")
+@Composable
+fun ImageUploadScreenDarkPreview() {
+    CarUTheme(darkTheme = true) {
+        ImageUploadScreen(
+            viewModel = RegistrationViewModel(),
+            onBackClick = {},
+            onSaveClick = {},
+            isDarkTheme = true,
+            onToggleTheme = {},
+            innerPadding = PaddingValues()
         )
     }
 }

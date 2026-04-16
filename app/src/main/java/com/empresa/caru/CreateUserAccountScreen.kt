@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -54,7 +55,7 @@ fun CreateUserAccountScreenUI(
         // Patron de fondo
         Image(
             painter = painterResource(id = R.drawable.background_food_pattern),
-            contentDescription = "Patron de fondo",
+            contentDescription = stringResource(R.string.background_pattern_description),
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop,
             alpha = if (isDarkTheme) 0.08f else 0.9f
@@ -72,7 +73,7 @@ fun CreateUserAccountScreenUI(
         ) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                contentDescription = stringResource(R.string.back_button_description),
                 tint = if (isDarkTheme) Color.White else Color(0xFF333333),
                 modifier = Modifier.size(22.dp)
             )
@@ -90,7 +91,7 @@ fun CreateUserAccountScreenUI(
         ) {
             Icon(
                 imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier = Modifier.size(22.dp)
             )
@@ -107,7 +108,7 @@ fun CreateUserAccountScreenUI(
         ) {
             // Titulo
             Text(
-                text = "Crea tu cuenta",
+                text = stringResource(R.string.create_user_account_title),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -120,7 +121,7 @@ fun CreateUserAccountScreenUI(
 
             // Campo nombre
             Text(
-                text = "Nombre completo",
+                text = stringResource(R.string.full_name_label),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -142,13 +143,13 @@ fun CreateUserAccountScreenUI(
                 ),
                 singleLine = true,
                 placeholder = {
-                    Text("Tu nombre", color = hintColor, fontFamily = CaruFontFamily)
+                    Text(stringResource(R.string.name_placeholder), color = hintColor, fontFamily = CaruFontFamily)
                 }
             )
 
             // Campo correo
             Text(
-                text = "Correo Electronico",
+                text = stringResource(R.string.email_label),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -171,13 +172,13 @@ fun CreateUserAccountScreenUI(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true,
                 placeholder = {
-                    Text("ejemplo@correo.com", color = hintColor, fontFamily = CaruFontFamily)
+                    Text(stringResource(R.string.email_placeholder), color = hintColor, fontFamily = CaruFontFamily)
                 }
             )
 
             // Campo contrasena
             Text(
-                text = "Contrasena",
+                text = stringResource(R.string.password_label),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color = textColor,
@@ -206,13 +207,13 @@ fun CreateUserAccountScreenUI(
                         Icon(
                             imageVector = if (passwordVisible)
                                 Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                            contentDescription = "Mostrar contrasena",
+                            contentDescription = stringResource(R.string.show_password_description),
                             tint = hintColor
                         )
                     }
                 },
                 placeholder = {
-                    Text("••••••••", color = hintColor, fontFamily = CaruFontFamily)
+                    Text(stringResource(R.string.password_placeholder), color = hintColor, fontFamily = CaruFontFamily)
                 }
             )
 
@@ -230,7 +231,7 @@ fun CreateUserAccountScreenUI(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text = "Crear cuenta",
+                    text = stringResource(R.string.create_account_button),
                     fontFamily = CaruFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp

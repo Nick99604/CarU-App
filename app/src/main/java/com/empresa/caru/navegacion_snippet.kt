@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -65,7 +66,7 @@ fun CreateUserAccountScreen(
         // Fondo decorativo
         Image(
             painter            = painterResource(id = R.drawable.background_food_pattern),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.background_pattern_description),
             modifier           = Modifier.matchParentSize(),
             contentScale       = ContentScale.Crop,
             alpha              = if (isDarkTheme) 0.06f else 0.06f
@@ -89,7 +90,7 @@ fun CreateUserAccountScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text       = "Estamos preparando\ntodo para ti",
+                        text       = stringResource(R.string.create_user_loading),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Normal,
                         color      = Color.White,
@@ -112,7 +113,7 @@ fun CreateUserAccountScreen(
         ) {
             Icon(
                 imageVector        = Icons.Filled.ArrowBack,
-                contentDescription = "Regresar",
+                contentDescription = stringResource(R.string.back_button_description),
                 tint               = iconTint,
                 modifier           = Modifier.size(22.dp)
             )
@@ -130,7 +131,7 @@ fun CreateUserAccountScreen(
         ) {
             Icon(
                 imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Cambiar tema",
+                contentDescription = stringResource(R.string.change_theme_description),
                 tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
                 modifier           = Modifier.size(22.dp)
             )
@@ -148,7 +149,7 @@ fun CreateUserAccountScreen(
 
             // Título
             Text(
-                text       = "Crea una cuenta\npara ti",
+                text       = stringResource(R.string.create_user_account_title),
                 fontFamily = CaruFontFamily,
                 fontWeight = FontWeight.Bold,
                 color      = textColor,
@@ -160,7 +161,7 @@ fun CreateUserAccountScreen(
             )
 
             // ── Campo Nombre ─────────────────────────────────────────────────
-            CaruFieldLabel(text = "Nombre", color = textColor)
+            CaruFieldLabel(text = stringResource(R.string.name_label), color = textColor)
             CaruTextField(
                 value         = nombre,
                 onValueChange = { nombre = it },
@@ -174,7 +175,7 @@ fun CreateUserAccountScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ── Campo Correo ─────────────────────────────────────────────────
-            CaruFieldLabel(text = "Correo Electrónico", color = textColor)
+            CaruFieldLabel(text = stringResource(R.string.email_label), color = textColor)
             CaruTextField(
                 value         = correo,
                 onValueChange = { correo = it },
@@ -188,7 +189,7 @@ fun CreateUserAccountScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ── Campo Contraseña ─────────────────────────────────────────────
-            CaruFieldLabel(text = "Contraseña", color = textColor)
+            CaruFieldLabel(text = stringResource(R.string.password_label), color = textColor)
             CaruPasswordField(
                 value           = contrasena,
                 onValueChange   = { contrasena = it },
@@ -232,7 +233,7 @@ fun CreateUserAccountScreen(
                     )
                 } else {
                     Text(
-                        text       = "Crear",
+                        text       = stringResource(R.string.create_user_button),
                         fontFamily = CaruFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize   = 20.sp
@@ -323,7 +324,7 @@ private fun CaruPasswordField(
                         Icons.Filled.Visibility
                     else
                         Icons.Filled.VisibilityOff,
-                    contentDescription = if (showPassword) "Ocultar" else "Mostrar",
+                    contentDescription = if (showPassword) stringResource(R.string.hide_password_description) else stringResource(R.string.show_password_description),
                     tint               = iconTint
                 )
             }
