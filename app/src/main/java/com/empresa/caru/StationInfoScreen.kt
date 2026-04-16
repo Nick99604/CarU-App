@@ -158,8 +158,8 @@ fun StationInfoScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 100.dp)
-                        .clip(RoundedCornerShape(16.dp)),
+                        .heightIn(min = 100.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = fieldBg,
                         unfocusedContainerColor = fieldBg,
@@ -201,9 +201,8 @@ fun StationInfoScreen(
                             modifier = Modifier.size(22.dp)
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp)),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = fieldBg,
                         unfocusedContainerColor = fieldBg,
@@ -251,8 +250,8 @@ fun StationInfoScreen(
                             )
                         },
                         modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(16.dp)),
+                            .weight(1f),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = fieldBg,
                             unfocusedContainerColor = fieldBg,
@@ -286,8 +285,8 @@ fun StationInfoScreen(
                             )
                         },
                         modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(16.dp)),
+                            .weight(1f),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = fieldBg,
                             unfocusedContainerColor = fieldBg,

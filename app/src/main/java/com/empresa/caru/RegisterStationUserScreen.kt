@@ -357,9 +357,8 @@ private fun RegisterStationField(
                     modifier = Modifier.size(20.dp)
                 )
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp)),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = fieldBg,
                 unfocusedContainerColor = fieldBg,
@@ -430,9 +429,8 @@ private fun RegisterStationPasswordField(
                 }
             },
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp)),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = fieldBg,
                 unfocusedContainerColor = fieldBg,

@@ -239,9 +239,8 @@ private fun ForgotTextField(
                 fontSize  = 15.sp
             )
         },
-        modifier      = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+        modifier      = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors        = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = fieldBg,
             unfocusedContainerColor = fieldBg,

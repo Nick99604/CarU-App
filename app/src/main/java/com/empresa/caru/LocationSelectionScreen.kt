@@ -202,9 +202,8 @@ fun LocationSelectionScreen(
                             modifier = Modifier.size(22.dp)
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp)),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = fieldBg,
                         unfocusedContainerColor = fieldBg,
