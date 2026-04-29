@@ -2,9 +2,13 @@ package com.empresa.caru.data.repository
 
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.domain.repository.Result
+import com.empresa.caru.domain.repository.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -18,6 +22,25 @@ class AuthRepositoryImpl(
     companion object {
         const val ERROR_EMAIL_NOT_FOUND = "EMAIL_NOT_FOUND"
         const val ERROR_WRONG_PASSWORD = "WRONG_PASSWORD"
+    }
+
+    /**
+     * Observes authentication state changes.
+     * Emits the current user immediately on subscription, then on every auth state change.
+     */
+    override fun observeAuthState(): Flow<UserProfile?> = callbackFlow {
+        val listener = FirebaseAuth.AuthStateListener { auth ->
+            val profile = auth.currentUser?.let { user ->
+                UserProfile(
+                    userId = user.uid,
+                    displayName = user.displayName ?: "",
+                    email = user.email ?: ""
+                )
+            }
+            trySend(profile)
+        }
+        firebaseAuth.addAuthStateListener(listener)
+        awaitClose { firebaseAuth.removeAuthStateListener(listener) }
     }
 
     override suspend fun register(email: String, password: String, displayName: String): Result<String> {

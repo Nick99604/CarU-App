@@ -1,5 +1,13 @@
 package com.empresa.caru
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,21 +19,27 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +51,24 @@ fun LocationSelectionScreen(
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
 ) {
+    val context = LocalContext.current
+
+    // Permission state
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasLocationPermission = isGranted
+    }
+
     val registration = viewModel.registration
     var address by remember(registration.value) { mutableStateOf(registration.value.address) }
 
@@ -48,6 +80,72 @@ fun LocationSelectionScreen(
     val iconBg          = if (isDarkTheme) Color(0xFF333333)  else Color(0xFFE0E0E0)
     val iconTint        = if (isDarkTheme) Color.White        else Color(0xFF333333)
     val mapBorder       = if (isDarkTheme) Color(0xFF3A3A3A)  else Color(0xFFE0E0E0)
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    val defaultPosition = LatLng(4.7110, -74.0721) // Bogotá, Colombia
+    var selectedPosition by remember { mutableStateOf(defaultPosition) }
+    var isGeocoding by remember { mutableStateOf(false) }
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(defaultPosition, 15f)
+    }
+
+    // Only enable myLocation when permission is granted
+    val mapProperties = remember(hasLocationPermission) {
+        MapProperties(
+            isMyLocationEnabled = hasLocationPermission,
+            mapType = MapType.NORMAL
+        )
+    }
+
+    fun centerOnMyLocation() {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            return
+        }
+        try {
+            @SuppressLint("MissingPermission")
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    selectedPosition = latLng
+                    cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
+
+                    // Reverse geocode
+                    isGeocoding = true
+                    try {
+                        @Suppress("DEPRECATION")
+                        val geocoder = Geocoder(context, Locale.getDefault())
+                        @Suppress("DEPRECATION")
+                        val addresses: List<Address>? = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val addr = addresses[0]
+                            address = addr.getAddressLine(0) ?: "${addr.thoroughfare ?: ""} ${addr.subThoroughfare ?: ""}".trim()
+                            Log.d("LocationSelection", "Geocoded address: $address")
+                        }
+                    } catch (_: Exception) { }
+                    isGeocoding = false
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
+    fun reverseGeocode(latLng: LatLng) {
+        isGeocoding = true
+        try {
+            @Suppress("DEPRECATION")
+            val geocoder = Geocoder(context, Locale.getDefault())
+            @Suppress("DEPRECATION")
+            val addresses: List<Address>? = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val addr = addresses[0]
+                address = addr.getAddressLine(0) ?: "${addr.thoroughfare ?: ""} ${addr.subThoroughfare ?: ""}".trim()
+                Log.d("LocationSelection", "Geocoded address: $address")
+            }
+        } catch (_: Exception) { }
+        isGeocoding = false
+    }
 
     Scaffold(
         topBar = {
@@ -135,41 +233,52 @@ fun LocationSelectionScreen(
                         .fillMaxWidth()
                         .height(250.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(cardBg)
                         .border(
                             width = 1.dp,
                             color = mapBorder,
                             shape = RoundedCornerShape(16.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        )
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = cameraPositionState,
+                        properties = mapProperties,
+                        uiSettings = MapUiSettings(
+                            zoomControlsEnabled = false,
+                            myLocationButtonEnabled = true
+                        ),
+                        onMapClick = { latLng ->
+                            selectedPosition = latLng
+                            reverseGeocode(latLng)
+                        }
+                    ) {
+                        Marker(
+                            state = MarkerState(position = selectedPosition),
+                            title = "Ubicación del puesto"
+                        )
+                    }
+
+                    FloatingActionButton(
+                        onClick = { centerOnMyLocation() },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp),
+                        containerColor = RedButtonColor,
+                        contentColor = Color.White
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.LocationOn,
-                            contentDescription = null,
-                            tint = RedButtonColor,
-                            modifier = Modifier.size(64.dp)
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "Mi ubicación"
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.map_placeholder_text),
-                            fontFamily = CaruFontFamily,
-                            fontWeight = FontWeight.Normal,
-                            color = labelColor,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(R.string.map_placeholder_subtext),
-                            fontFamily = CaruFontFamily,
-                            fontWeight = FontWeight.Normal,
-                            color = labelColor,
-                            fontSize = 13.sp,
-                            textAlign = TextAlign.Center
+                    }
+
+                    if (isGeocoding) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(32.dp),
+                            color = RedButtonColor,
+                            strokeWidth = 3.dp
                         )
                     }
                 }

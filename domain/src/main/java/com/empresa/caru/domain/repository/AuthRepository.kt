@@ -1,5 +1,7 @@
 package com.empresa.caru.domain.repository
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Result wrapper for operations that can succeed or fail.
  */
@@ -7,6 +9,15 @@ sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
     data class Error(val message: String) : Result<Nothing>()
 }
+
+/**
+ * Simple user profile data used across domain layer.
+ */
+data class UserProfile(
+    val userId: String = "",
+    val displayName: String = "",
+    val email: String = ""
+)
 
 /**
  * Repository contract for authentication operations.
@@ -37,4 +48,10 @@ interface AuthRepository {
      * @return Result with success or an error message.
      */
     suspend fun sendPasswordReset(email: String): Result<Unit>
+
+    /**
+     * Observes authentication state changes.
+     * @return Flow that emits the current user profile on subscription and on every auth state change.
+     */
+    fun observeAuthState(): Flow<UserProfile?>
 }

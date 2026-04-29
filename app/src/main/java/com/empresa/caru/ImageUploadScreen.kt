@@ -1,5 +1,10 @@
 package com.empresa.caru
 
+import android.Manifest
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,10 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -25,12 +28,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,9 +53,16 @@ fun ImageUploadScreen(
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
 ) {
-    val registration = viewModel.registration
-    var selectedImageUri by remember(registration.value) { mutableStateOf(registration.value.stationImageUri) }
-    var showOptions by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Observe the registration state safely using collectAsState
+    val registration by viewModel.registration.collectAsState()
+
+    // Image URI state - initialize with existing value if available
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+    var uploadError by remember { mutableStateOf<String?>(null) }
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor       = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
@@ -53,6 +71,49 @@ fun ImageUploadScreen(
     val cardBorder      = if (isDarkTheme) Color(0xFF3A3A3A)  else Color(0xFFE0E0E0)
     val iconBg          = if (isDarkTheme) Color(0xFF333333)  else Color(0xFFE0E0E0)
     val iconTint        = if (isDarkTheme) Color.White        else Color(0xFF333333)
+
+    // Initialize selectedImageUri from registration when available
+    LaunchedEffect(registration.stationImageUri) {
+        registration.stationImageUri?.let { uriString ->
+            if (uriString.isNotBlank()) {
+                selectedImageUri = Uri.parse(uriString)
+            }
+        }
+    }
+
+    // Gallery launcher - defined first
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedImageUri = it }
+    }
+
+    // Camera launcher - defined before permission launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempCameraUri?.let { uri ->
+                selectedImageUri = uri
+            }
+        }
+    }
+
+    // Camera permission launcher
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val photoFile = java.io.File(context.cacheDir, "station_photo_${System.currentTimeMillis()}.jpg")
+            val photoUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                photoFile
+            )
+            tempCameraUri = photoUri
+            cameraLauncher.launch(photoUri)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -152,21 +213,12 @@ fun ImageUploadScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (selectedImageUri != null) {
-                        // Aquí se mostraría la imagen seleccionada
-                        // Por ahora mostramos un placeholder con icono
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Image,
-                                contentDescription = null,
-                                tint = RedButtonColor,
-                                modifier = Modifier.size(80.dp)
-                            )
+                    if (isUploading) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = RedButtonColor, modifier = Modifier.size(60.dp))
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = stringResource(R.string.image_selected_text),
+                                text = "Subiendo imagen...",
                                 fontFamily = CaruFontFamily,
                                 fontWeight = FontWeight.Normal,
                                 color = labelColor,
@@ -174,10 +226,17 @@ fun ImageUploadScreen(
                                 textAlign = TextAlign.Center
                             )
                         }
+                    } else if (selectedImageUri != null) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = stringResource(R.string.image_selected_text),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(24.dp)),
+                            contentScale = ContentScale.Crop
+                        )
                     } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 imageVector = Icons.Filled.PhotoLibrary,
                                 contentDescription = null,
@@ -216,27 +275,7 @@ fun ImageUploadScreen(
                         iconBg = iconBg,
                         iconTint = iconTint,
                         onClick = {
-                            // En una implementación real, esto lanzaría la cámara
-                            // selectedImageUri = "camera_captured"
-                            showOptions = true
-                        }
-                    )
-
-                    // Subir imagen
-                    ImageUploadOption(
-                        icon = Icons.Filled.Upload,
-                        label = stringResource(R.string.upload_image_option),
-                        description = stringResource(R.string.upload_image_description),
-                        cardBg = cardBg,
-                        cardBorder = cardBorder,
-                        textColor = textColor,
-                        labelColor = labelColor,
-                        iconBg = iconBg,
-                        iconTint = iconTint,
-                        onClick = {
-                            // En una implementación real, esto abriría un selector de archivos
-                            // selectedImageUri = "uploaded"
-                            showOptions = true
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         }
                     )
 
@@ -252,9 +291,7 @@ fun ImageUploadScreen(
                         iconBg = iconBg,
                         iconTint = iconTint,
                         onClick = {
-                            // En una implementación real, esto abriría la galería
-                            // selectedImageUri = "gallery_selected"
-                            showOptions = true
+                            galleryLauncher.launch("image/*")
                         }
                     )
                 }
@@ -265,8 +302,29 @@ fun ImageUploadScreen(
                 // Botón Guardar
                 Button(
                     onClick = {
-                        viewModel.updateImage(selectedImageUri)
-                        onSaveClick()
+                        selectedImageUri?.let { uri ->
+                            isUploading = true
+                            uploadError = null
+                            CoroutineScope(Dispatchers.Main).launch {
+                                try {
+                                    val storage = FirebaseStorage.getInstance()
+                                    val storageRef = storage.reference.child("station_photos/${System.currentTimeMillis()}.jpg")
+                                    val uploadTask = storageRef.putFile(uri)
+                                    uploadTask.await()
+                                    val downloadUrl = storageRef.downloadUrl.await().toString()
+                                    viewModel.updateImage(downloadUrl)
+                                    isUploading = false
+                                    onSaveClick()
+                                } catch (e: Exception) {
+                                    Log.e("ImageUpload", "Upload failed", e)
+                                    uploadError = e.message
+                                    isUploading = false
+                                }
+                            }
+                        } ?: run {
+                            viewModel.updateImage(null)
+                            onSaveClick()
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -276,7 +334,8 @@ fun ImageUploadScreen(
                         containerColor = RedButtonColor,
                         contentColor = Color.White
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                    enabled = !isUploading
                 ) {
                     Text(
                         text = stringResource(R.string.save_button),
@@ -286,42 +345,21 @@ fun ImageUploadScreen(
                     )
                 }
 
+                // Error message
+                uploadError?.let { error ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Error: $error",
+                        fontFamily = CaruFontFamily,
+                        color = Color(0xFFFF5252),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
-    }
-
-    // Diálogo de confirmación de opción (placeholder para implementación real)
-    if (showOptions) {
-        AlertDialog(
-            onDismissRequest = { showOptions = false },
-            containerColor = cardBg,
-            title = {
-                Text(
-                    text = stringResource(R.string.image_options_title),
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
-                )
-            },
-            text = {
-                Text(
-                    text = stringResource(R.string.image_options_message),
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    color = labelColor,
-                    fontSize = 15.sp
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showOptions = false }) {
-                    Text(
-                        text = "OK",
-                        color = RedButtonColor
-                    )
-                }
-            }
-        )
     }
 }
 

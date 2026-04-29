@@ -5,7 +5,11 @@
       "Bash(./gradlew clean *)",
       "Bash(head -676 C:/Users/Nick/AndroidStudioProjects/CarU/app/src/main/java/com/empresa/caru/MainActivity.kt)",
       "Bash(mv /tmp/main_temp.kt C:/Users/Nick/AndroidStudioProjects/CarU/app/src/main/java/com/empresa/caru/MainActivity.kt)",
-      "Bash(./gradlew compileDebugKotlin)"
+      "Bash(./gradlew compileDebugKotlin)",
+      "Bash(./gradlew assembleDebug --quiet)",
+      "Bash(./gradlew assembleDebug --info)",
+      "Bash(./gradlew :data:compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :app:compileDebugKotlin --no-daemon)"
     ]
   }
 }

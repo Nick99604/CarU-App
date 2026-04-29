@@ -17,6 +17,9 @@ object SharedStationRepository {
     private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
     val favoriteIds: StateFlow<Set<String>> = _favoriteIds.asStateFlow()
 
+    private val _savedStationIds = MutableStateFlow<Set<String>>(emptySet())
+    val savedStationIds: StateFlow<Set<String>> = _savedStationIds.asStateFlow()
+
     fun addStation(station: FoodStation) {
         _stations.value = _stations.value + station
     }
@@ -47,5 +50,26 @@ object SharedStationRepository {
     fun getFavoriteStations(): List<FoodStation> {
         val favoriteIdsSet = _favoriteIds.value
         return _stations.value.filter { it.id in favoriteIdsSet }
+    }
+
+    fun toggleSavedStation(stationId: String) {
+        _savedStationIds.value = if (stationId in _savedStationIds.value) {
+            _savedStationIds.value - stationId
+        } else {
+            _savedStationIds.value + stationId
+        }
+    }
+
+    fun isSavedStation(stationId: String): Boolean {
+        return stationId in _savedStationIds.value
+    }
+
+    fun setSavedStationIds(ids: Set<String>) {
+        _savedStationIds.value = ids
+    }
+
+    fun getSavedStations(): List<FoodStation> {
+        val savedIds = _savedStationIds.value
+        return _stations.value.filter { it.id in savedIds }
     }
 }

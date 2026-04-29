@@ -37,6 +37,7 @@ fun StationDetailScreen(
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteConfirm: () -> Unit,
+    onSaveClick: () -> Unit,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
@@ -237,9 +238,9 @@ fun StationDetailScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             AppButton(
-                text = "Eliminar puesto",
-                onClick = { showDeleteDialog = true },
-                buttonColor = Color.Red
+                text = "Guardar",
+                onClick = onSaveClick,
+                buttonColor = Color(0xFFFF2800)
             )
         }
     }

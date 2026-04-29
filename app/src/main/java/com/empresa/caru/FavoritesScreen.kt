@@ -40,7 +40,8 @@ fun FavoritesScreen(
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
 ) {
-    val favoriteStations by viewModel.favoriteStations.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val favoriteStations = uiState.favoriteStations
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val cardBg = if (isDarkTheme) Color(0xFF2C2C2C) else Color(0xFFFFFFFF)

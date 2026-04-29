@@ -34,6 +34,7 @@ import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.ui.theme.CarUTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.auth.FirebaseAuth
 
 
 // ── Botón reutilizable ───────────────────────────────────────────────────────
@@ -185,6 +186,8 @@ class MainActivity : ComponentActivity() {
             val favoritesViewModel: FavoritesViewModel = remember { FavoritesViewModel() }
             val onboardingViewModel: OnboardingViewModel = remember { OnboardingViewModel() }
             val homeViewModel: HomeViewModel = remember { HomeViewModel() }
+            val savedStationsViewModel: SavedStationsViewModel = remember { SavedStationsViewModel() }
+            val profileViewModel: ProfileViewModel = remember { ProfileViewModel() }
 
 
             CarUTheme(darkTheme = isDarkTheme) {
@@ -261,6 +264,7 @@ class MainActivity : ComponentActivity() {
                                     registrationViewModel.saveStation { success ->
                                         if (success) {
                                             homeViewModel.refresh()
+                                            registrationViewModel.reset() // Limpiar formulario después de guardar
                                             navController.navigate("onboarding_profile_image") {
                                                 popUpTo("start") { inclusive = false }
                                             }
@@ -345,6 +349,13 @@ class MainActivity : ComponentActivity() {
                                 onBackClick = { navController.popBackStack() },
                                 onEditClick = { navController.navigate("register_station") },
                                 onDeleteConfirm = {
+                                    registrationViewModel.deleteStation {
+                                        navController.navigate("home") {
+                                            popUpTo("start") { inclusive = false }
+                                        }
+                                    }
+                                },
+                                onSaveClick = {
                                     navController.navigate("home") {
                                         popUpTo("start") { inclusive = false }
                                     }
@@ -372,6 +383,7 @@ class MainActivity : ComponentActivity() {
                             RegisterStationUserScreen(
                                 onBackClick = { navController.popBackStack() },
                                 onSuccess   = {
+                                    registrationViewModel.reset() // Limpiar cualquier estado previo
                                     navController.navigate("register_station") {
                                         popUpTo("register_station_user") { inclusive = true }
                                     }
@@ -385,13 +397,15 @@ class MainActivity : ComponentActivity() {
                         // Pantalla principal (home)
                         composable(route = "home") {
                             HomeScreen(
-                                viewModel = homeViewModel, // ✅ NUEVO
+                                viewModel = homeViewModel,
                                 favoritesViewModel = favoritesViewModel,
+                                savedStationsViewModel = savedStationsViewModel,
                                 onStationClick = { stationId ->
                                     navController.navigate("station_detail")
                                 },
                                 onProfileClick = { navController.navigate("profile") },
                                 onFavoritesClick = { navController.navigate("favorites") },
+                                onSavedStationsClick = { navController.navigate("saved_stations") },
                                 onSettingsClick = { navController.navigate("settings") },
                                 isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
@@ -413,32 +427,50 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        // Pantalla: Guardados
+                        composable("saved_stations") {
+                            val savedStationsUiState by savedStationsViewModel.uiState.collectAsState()
+                            SavedStationsScreen(
+                                stations = savedStationsUiState.savedStations,
+                                isLoading = savedStationsUiState.isLoading,
+                                onStationClick = { stationId ->
+                                    navController.navigate("station_detail")
+                                },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
                         // Pantalla: Perfil
                         composable("profile") {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Mi Perfil",
-                                    fontFamily = CaruFontFamily,
-                                    fontSize = 24.sp
-                                )
-                            }
+                            ProfileScreen(
+                                onBackClick = { navController.popBackStack() },
+                                viewModel = profileViewModel,
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
                         }
 
                         // Pantalla: Ajustes
                         composable("settings") {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Ajustes",
-                                    fontFamily = CaruFontFamily,
-                                    fontSize = 24.sp
-                                )
-                            }
+                            SettingsScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onLogout = {
+                                    FirebaseAuth.getInstance().signOut()
+                                    profileViewModel.resetToDefaults()
+                                    navController.navigate("start") {
+                                        popUpTo("start") { inclusive = false }
+                                    }
+                                },
+                                onChangePasswordClick = {
+                                    navController.navigate("forgot_password")
+                                },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
                         }
 
                         // Crear cuenta usuario
@@ -861,6 +893,7 @@ fun StationDetailScreenLightPreview() {
             onBackClick = {},
             onEditClick = {},
             onDeleteConfirm = {},
+            onSaveClick = {},
             isDarkTheme = false,
             onToggleTheme = {},
             innerPadding = PaddingValues()
@@ -878,6 +911,7 @@ fun StationDetailScreenDarkPreview() {
             onBackClick = {},
             onEditClick = {},
             onDeleteConfirm = {},
+            onSaveClick = {},
             isDarkTheme = true,
             onToggleTheme = {},
             innerPadding = PaddingValues()
@@ -1044,8 +1078,10 @@ fun HomeScreenLightPreview() {
         HomeScreen(
             viewModel = HomeViewModel(),
             favoritesViewModel = FavoritesViewModel(),
+            savedStationsViewModel = SavedStationsViewModel(),
             onProfileClick = {},
             onFavoritesClick = {},
+            onSavedStationsClick = {},
             onSettingsClick = {},
             onStationClick = {},
             isDarkTheme = false,
@@ -1062,8 +1098,10 @@ fun HomeScreenDarkPreview() {
         HomeScreen(
             viewModel = HomeViewModel(),
             favoritesViewModel = FavoritesViewModel(),
+            savedStationsViewModel = SavedStationsViewModel(),
             onProfileClick = {},
             onFavoritesClick = {},
+            onSavedStationsClick = {},
             onSettingsClick = {},
             onStationClick = {},
             isDarkTheme = true,

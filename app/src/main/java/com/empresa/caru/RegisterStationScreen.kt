@@ -1,15 +1,21 @@
 package com.empresa.caru
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -19,11 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +35,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.empresa.caru.R
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.domain.repository.Result
@@ -52,6 +57,8 @@ fun RegisterStationScreen(
     var showPassword by remember { mutableStateOf(false) }
     var isLoading    by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var stationImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showImagePickerDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
@@ -61,6 +68,50 @@ fun RegisterStationScreen(
     val iconBg          = if (isDarkTheme) Color(0xFF333333)  else Color(0xFFE0E0E0)
     val iconTint        = if (isDarkTheme) Color.White        else Color(0xFF333333)
     val fillAllFieldsMsg = stringResource(R.string.please_fill_all_fields)
+    val cardBg          = if (isDarkTheme) Color(0xFF2C2C2C) else Color(0xFFFFFFFF)
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { stationImageUri = it }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success.not()) {
+            stationImageUri = null
+        }
+    }
+
+    fun launchCamera() {
+        val photoUri = Uri.parse("file://${System.currentTimeMillis()}.jpg")
+        cameraLauncher.launch(photoUri)
+    }
+
+    if (showImagePickerDialog) {
+        AlertDialog(
+            onDismissRequest = { showImagePickerDialog = false },
+            title = { Text("Seleccionar imagen") },
+            text = { Text("¿Cómo deseas agregar la foto del puesto?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showImagePickerDialog = false
+                    launchCamera()
+                }) {
+                    Text("Cámara")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showImagePickerDialog = false
+                    imagePickerLauncher.launch("image/*")
+                }) {
+                    Text("Galería")
+                }
+            }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -159,7 +210,69 @@ fun RegisterStationScreen(
                 fontSize   = 30.sp,
                 modifier   = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 36.dp)
+                    .padding(bottom = 24.dp)
+            )
+
+            // Imagen del puesto
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(cardBg)
+                        .border(
+                            width = 3.dp,
+                            color = if (stationImageUri != null) RedButtonColor else cardBg,
+                            shape = CircleShape
+                        )
+                        .clickable { showImagePickerDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (stationImageUri != null) {
+                        AsyncImage(
+                            model = stationImageUri,
+                            contentDescription = "Foto del puesto",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null,
+                                tint = textColor.copy(alpha = 0.5f),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                tint = RedButtonColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Text(
+                text       = "Toca para agregar foto del puesto",
+                fontFamily = CaruFontFamily,
+                fontSize   = 13.sp,
+                color      = textColor.copy(alpha = 0.6f),
+                textAlign  = TextAlign.Center,
+                modifier   = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
             )
 
             // Campo Nombre
