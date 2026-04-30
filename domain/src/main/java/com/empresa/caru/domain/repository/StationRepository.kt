@@ -14,5 +14,6 @@ interface StationRepository {
     suspend fun uploadImage(stationId: String, imageUri: String): Result<String>
     suspend fun saveStation(stationId: String): Result<Unit>
     suspend fun unsaveStation(stationId: String): Result<Unit>
+    suspend fun saveFoodStation(station: FoodStation): Result<Unit>
     fun getSavedStationIdsFlow(): Flow<Result<List<String>>>
 }

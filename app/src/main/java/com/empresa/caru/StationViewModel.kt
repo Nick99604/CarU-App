@@ -1,5 +1,6 @@
 package com.empresa.caru
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.empresa.caru.domain.model.DayScheduleDto
@@ -20,6 +21,7 @@ sealed class StationUiState {
     data class Error(val message: String) : StationUiState()
     data object Deleted : StationUiState()
     data object Saved : StationUiState()
+    data object SaveSuccess : StationUiState()
 }
 
 data class StationEditState(
@@ -214,6 +216,54 @@ class StationViewModel(
                 }
             } else {
                 _uiState.value = StationUiState.Error("No hay puesto para eliminar")
+            }
+        }
+    }
+
+    fun onSaveStation(onNavigateHome: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            _uiState.value = StationUiState.Loading
+            val edit = _editState.value
+            val currentState = _uiState.value
+
+            // Preservar ownerId original si existe
+            val originalOwnerId = if (currentState is StationUiState.Success) {
+                currentState.station.ownerId
+            } else {
+                ""
+            }
+
+            val station = FoodStation(
+                id = currentStationId,
+                name = edit.name,
+                vendorName = edit.vendorName,
+                address = edit.address,
+                phone = edit.phone,
+                foodTypes = edit.foodTypes,
+                schedule = edit.schedule,
+                imageUrl = edit.imageUrl,
+                priceMin = edit.priceMin,
+                priceMax = edit.priceMax,
+                latitude = 0.0,
+                longitude = 0.0,
+                ownerId = originalOwnerId
+            )
+
+            Log.d("StationVM", "onSaveStation: guardando station")
+            Log.d("StationVM", "  id=[${station.id}], name=[${station.name}]")
+            Log.d("StationVM", "  ownerId=[${station.ownerId}]")
+            Log.d("StationVM", "  foodTypes=${station.foodTypes}")
+
+            when (val result = repository.saveFoodStation(station)) {
+                is Result.Success -> {
+                    _uiState.value = StationUiState.SaveSuccess
+                    Log.d("StationVM", "onSaveStation: SUCCESS")
+                    onNavigateHome?.invoke()
+                }
+                is Result.Error -> {
+                    _uiState.value = StationUiState.Error(result.message)
+                    Log.e("StationVM", "onSaveStation: ERROR - ${result.message}")
+                }
             }
         }
     }

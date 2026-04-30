@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.empresa.caru.domain.model.FoodStation
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun StationDetailScreen(
@@ -45,6 +46,10 @@ fun StationDetailScreen(
     val registration by viewModel.registration.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // Get current user name from Firebase Auth
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val vendorDisplayName = currentUser?.displayName ?: currentUser?.email?.substringBefore('@') ?: "Usuario"
+
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor = if (isDarkTheme) Color.White else Color.Black
     val fieldBg = if (isDarkTheme) Color(0xFF2C2C2C) else Color(0xFFE0E0E0)
@@ -53,11 +58,11 @@ fun StationDetailScreen(
     val favoriteIds by favoritesViewModel.favoriteIds.collectAsState()
 
     // Crear FoodStation temporal para favoritos
-    val tempStation = remember(registration) {
+    val tempStation = remember(registration, vendorDisplayName) {
         FoodStation(
             id = registration.address.ifBlank { "temp_station" },
             name = registration.address.ifBlank { "Mi Puesto" },
-            vendorName = "Usuario",
+            vendorName = vendorDisplayName,
             address = registration.address,
             phone = registration.contactPhone,
             foodTypes = registration.foodTypes.map { it.label },
@@ -193,7 +198,7 @@ fun StationDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     InfoField("🌮 Puesto", registration.address.ifBlank { "Mi puesto" })
-                    InfoField("👤 Vendedor", "Carlos Ramírez")
+                    InfoField("👤 Vendedor", vendorDisplayName)
                     InfoField("📍 Ubicación", registration.address.ifBlank { "-" })
                     InfoField("📞 Teléfono", registration.contactPhone.ifBlank { "-" })
 

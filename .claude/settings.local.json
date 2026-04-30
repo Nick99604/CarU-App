@@ -9,7 +9,9 @@
       "Bash(./gradlew assembleDebug --quiet)",
       "Bash(./gradlew assembleDebug --info)",
       "Bash(./gradlew :data:compileDebugKotlin --no-daemon)",
-      "Bash(./gradlew :app:compileDebugKotlin --no-daemon)"
+      "Bash(./gradlew :app:compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :data:compileDebugKotlin)",
+      "Bash(./gradlew :app:compileDebugKotlin)"
     ]
   }
 }

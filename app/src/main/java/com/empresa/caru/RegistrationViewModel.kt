@@ -3,7 +3,9 @@ package com.empresa.caru
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.empresa.caru.domain.model.DayScheduleDto
 import com.empresa.caru.domain.model.FoodStation
+import com.empresa.caru.domain.model.StationScheduleDto
 import com.empresa.caru.domain.repository.Result
 import com.empresa.caru.domain.repository.StationRepository
 import com.empresa.caru.data.repository.StationRepositoryImpl
@@ -78,8 +80,12 @@ class RegistrationViewModel(
         _infoCompleted.value = description.isNotBlank() && phone.isNotBlank()
     }
 
-    fun updateAddress(address: String) {
-        _registration.value = _registration.value.copy(address = address)
+    fun updateAddress(address: String, latitude: Double? = null, longitude: Double? = null) {
+        _registration.value = _registration.value.copy(
+            address = address,
+            latitude = latitude,
+            longitude = longitude
+        )
         _locationCompleted.value = address.isNotBlank()
     }
 
@@ -94,7 +100,9 @@ class RegistrationViewModel(
 
     fun updateImage(uri: String?) {
         _registration.value = _registration.value.copy(stationImageUri = uri)
-        _imageCompleted.value = uri != null
+        // Imagen es opcional - solo marca completado si hay una imagen
+        // _imageCompleted.value = uri != null
+        _imageCompleted.value = true // Siempre completado (imagen opcional)
     }
 
     fun reset() {
@@ -131,6 +139,7 @@ class RegistrationViewModel(
         viewModelScope.launch {
             _isSaving.value = true
             Log.d(TAG, "saveStation: iniciando...")
+            Log.d(TAG, "  registration=${_registration.value}")
 
             try {
                 val reg = _registration.value
@@ -144,6 +153,21 @@ class RegistrationViewModel(
                 val vendorName = currentUser.displayName ?: "Usuario"
 
                 Log.d(TAG, "saveStation: userId=$userId, vendorName=$vendorName")
+                Log.d(TAG, "  foodTypes=${reg.foodTypes}, count=${reg.foodTypes.size}")
+                Log.d(TAG, "  address=${reg.address}")
+                Log.d(TAG, "  phone=${reg.contactPhone}")
+                Log.d(TAG, "  schedule es default: ${reg.schedule == StationSchedule()}")
+
+                // Convertir StationSchedule (UI) a StationScheduleDto (domain)
+                val scheduleDto = StationScheduleDto(
+                    monday = convertDaySchedule(reg.schedule.monday),
+                    tuesday = convertDaySchedule(reg.schedule.tuesday),
+                    wednesday = convertDaySchedule(reg.schedule.wednesday),
+                    thursday = convertDaySchedule(reg.schedule.thursday),
+                    friday = convertDaySchedule(reg.schedule.friday),
+                    saturday = convertDaySchedule(reg.schedule.saturday),
+                    sunday = convertDaySchedule(reg.schedule.sunday)
+                )
 
                 val station = FoodStation(
                     id = "",
@@ -152,15 +176,21 @@ class RegistrationViewModel(
                     address = reg.address,
                     phone = reg.contactPhone,
                     foodTypes = reg.foodTypes.map { it.label },
+                    schedule = scheduleDto,
                     imageUrl = reg.stationImageUri,
                     priceMin = reg.averagePriceMin,
                     priceMax = reg.averagePriceMax,
-                    latitude = reg.latitude,
-                    longitude = reg.longitude,
+                    latitude = reg.latitude ?: 0.0,
+                    longitude = reg.longitude ?: 0.0,
                     ownerId = userId
                 )
 
                 Log.d(TAG, "saveStation: station=$station")
+                Log.d(TAG, "  name=${station.name}, address=${station.address}")
+                Log.d(TAG, "  phone=${station.phone}, foodTypes=${station.foodTypes}")
+                Log.d(TAG, "  ownerId=${station.ownerId}")
+                Log.d(TAG, "  schedule=${station.schedule}")
+                Log.d(TAG, "  latitude=${station.latitude}, longitude=${station.longitude}")
 
                 when (val result = stationRepository.createStation(station)) {
                     is Result.Success -> {
@@ -182,6 +212,14 @@ class RegistrationViewModel(
                 onComplete(false)
             }
         }
+    }
+
+    private fun convertDaySchedule(day: DaySchedule): DayScheduleDto {
+        return DayScheduleDto(
+            isOpen = day.isOpen,
+            startTime = day.startTime,
+            endTime = day.endTime
+        )
     }
 
     fun deleteStation(onComplete: (Boolean) -> Unit = {}) {

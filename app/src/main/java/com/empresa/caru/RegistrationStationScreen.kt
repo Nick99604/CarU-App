@@ -1,5 +1,6 @@
 package com.empresa.caru
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,6 +65,7 @@ fun RegistrationStationScreen(
     val locationCompleted by viewModel.locationCompleted.collectAsState()
     val scheduleCompleted by viewModel.scheduleCompleted.collectAsState()
     val imageCompleted by viewModel.imageCompleted.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState() // Estado de carga
     val completedCount = viewModel.completedCount
     val totalSections = viewModel.totalSections
 
@@ -128,7 +130,7 @@ fun RegistrationStationScreen(
                 contentDescription = null,
                 modifier = Modifier.matchParentSize(),
                 contentScale = ContentScale.Crop,
-                alpha = if (isDarkTheme) 0.06f else 0.06f
+                alpha = 0.06f
             )
 
             Column(
@@ -271,10 +273,20 @@ fun RegistrationStationScreen(
                     }
                 }
 
+                // BOTÓN CORREGIDO
                 Button(
                     onClick = {
+                        Log.d("RegStationScreen", "BOTÓN PRESIONADO - isAllCompleted=${viewModel.isAllCompleted}")
                         if (viewModel.isAllCompleted) {
-                            onSuccess()
+                            Log.d("RegStationScreen", "Llamando viewModel.saveStation...")
+                            viewModel.saveStation { success ->
+                                Log.d("RegStationScreen", "saveStation callback: success=$success")
+                                if (success) {
+                                    onSuccess()
+                                }
+                            }
+                        } else {
+                            Log.d("RegStationScreen", "isAllCompleted es false, no se puede guardar")
                         }
                     },
                     modifier = Modifier
@@ -283,7 +295,7 @@ fun RegistrationStationScreen(
                     shape = RoundedCornerShape(50.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (viewModel.isAllCompleted) RedButtonColor
-                                         else if (isDarkTheme) Color(0xFF444444) else Color(0xFFBDBDBD),
+                        else if (isDarkTheme) Color(0xFF444444) else Color(0xFFBDBDBD),
                         contentColor = Color.White,
                         disabledContainerColor = if (isDarkTheme) Color(0xFF444444) else Color(0xFFBDBDBD),
                         disabledContentColor = Color.White.copy(alpha = 0.5f)
@@ -291,25 +303,33 @@ fun RegistrationStationScreen(
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = if (viewModel.isAllCompleted) 4.dp else 0.dp
                     ),
-                    enabled = viewModel.isAllCompleted
+                    enabled = viewModel.isAllCompleted && !isSaving
                 ) {
-                    if (viewModel.isAllCompleted) {
-                        Icon(
-                            imageVector = Icons.Filled.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp)
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    } else {
+                        if (viewModel.isAllCompleted) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = if (viewModel.isAllCompleted)
+                                stringResource(R.string.finish_registration)
+                            else
+                                stringResource(R.string.complete_all_sections),
+                            fontFamily = CaruFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
                     }
-                    Text(
-                        text = if (viewModel.isAllCompleted)
-                            stringResource(R.string.finish_registration)
-                        else
-                            stringResource(R.string.complete_all_sections),
-                        fontFamily = CaruFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

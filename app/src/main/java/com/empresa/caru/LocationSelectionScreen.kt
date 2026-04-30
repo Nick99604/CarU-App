@@ -332,7 +332,7 @@ fun LocationSelectionScreen(
 
                 Button(
                     onClick = {
-                        viewModel.updateAddress(address)
+                        viewModel.updateAddress(address, selectedPosition.latitude, selectedPosition.longitude)
                         onContinueClick()
                     },
                     modifier = Modifier

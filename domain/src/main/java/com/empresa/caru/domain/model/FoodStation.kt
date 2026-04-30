@@ -12,11 +12,11 @@ data class FoodStation(
     val foodTypes: List<String> = emptyList(),
     val schedule: StationScheduleDto = StationScheduleDto(),
     val imageUrl: String? = null,
-    val ownerId: String = "",
+    val ownerId: String = "", // Este ID debe coincidir con el usuario logueado
     val priceMin: String = "",
     val priceMax: String = "",
-    val latitude: Double? = null,
-    val longitude: Double? = null
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 )
 
 data class StationScheduleDto(
