@@ -8,7 +8,9 @@ import com.empresa.caru.domain.model.FoodStation
 import com.empresa.caru.domain.model.StationScheduleDto
 import com.empresa.caru.domain.repository.Result
 import com.empresa.caru.domain.repository.StationRepository
+import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.data.repository.StationRepositoryImpl
+import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 
 class RegistrationViewModel(
     private val stationRepository: StationRepository = StationRepositoryImpl(),
+    private val authRepository: AuthRepository = AuthRepositoryImpl(),
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
@@ -78,6 +81,49 @@ class RegistrationViewModel(
             averagePriceMax = priceMax
         )
         _infoCompleted.value = description.isNotBlank() && phone.isNotBlank()
+    }
+
+    fun updateStationName(name: String) {
+        _registration.value = _registration.value.copy(stationName = name)
+    }
+
+    /**
+     * Carga el nombre real del vendedor y nombre del puesto desde Firestore
+     */
+    fun loadVendorName(onLoaded: (String) -> Unit = {}) {
+        val userId = firebaseAuth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            when (val result = authRepository.getUserRealName(userId)) {
+                is Result.Success -> {
+                    _registration.value = _registration.value.copy(vendorName = result.data)
+                    onLoaded(result.data)
+                }
+                is Result.Error -> {
+                    val fallback = firebaseAuth.currentUser?.displayName
+                        ?: firebaseAuth.currentUser?.email?.substringBefore('@')
+                        ?: "Usuario"
+                    _registration.value = _registration.value.copy(vendorName = fallback)
+                    onLoaded(fallback)
+                }
+            }
+        }
+    }
+
+    /**
+     * Carga el nombre del puesto desde Firestore (collection users)
+     */
+    fun loadStationName() {
+        val userId = firebaseAuth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            when (val result = authRepository.getStationName(userId)) {
+                is Result.Success -> {
+                    _registration.value = _registration.value.copy(stationName = result.data)
+                }
+                is Result.Error -> {
+                    Log.w(TAG, "loadStationName: no se pudo cargar, ${result.message}")
+                }
+            }
+        }
     }
 
     fun updateAddress(address: String, latitude: Double? = null, longitude: Double? = null) {
@@ -150,9 +196,26 @@ class RegistrationViewModel(
                     onComplete(false)
                     return@launch
                 }
-                val vendorName = currentUser.displayName ?: "Usuario"
 
-                Log.d(TAG, "saveStation: userId=$userId, vendorName=$vendorName")
+                // Obtener el nombre real del usuario desde Firestore
+                val vendorName = when (val result = authRepository.getUserRealName(userId)) {
+                    is Result.Success -> result.data
+                    is Result.Error -> {
+                        Log.w(TAG, "getUserRealName error: ${result.message}, usando fallback")
+                        currentUser.displayName ?: currentUser.email?.substringBefore('@') ?: "Usuario"
+                    }
+                }
+
+                // Obtener el nombre del puesto desde Firestore (para evitar race condition)
+                val stationName = when (val result = authRepository.getStationName(userId)) {
+                    is Result.Success -> result.data
+                    is Result.Error -> {
+                        Log.w(TAG, "getStationName error: ${result.message}, usando fallback")
+                        reg.stationName
+                    }
+                }
+
+                Log.d(TAG, "saveStation: userId=$userId, vendorName=$vendorName, stationName=$stationName")
                 Log.d(TAG, "  foodTypes=${reg.foodTypes}, count=${reg.foodTypes.size}")
                 Log.d(TAG, "  address=${reg.address}")
                 Log.d(TAG, "  phone=${reg.contactPhone}")
@@ -171,7 +234,7 @@ class RegistrationViewModel(
 
                 val station = FoodStation(
                     id = "",
-                    name = reg.address.ifBlank { "Mi Puesto" },
+                    name = stationName.ifBlank { reg.address.ifBlank { "Mi Puesto" } },
                     vendorName = vendorName,
                     address = reg.address,
                     phone = reg.contactPhone,

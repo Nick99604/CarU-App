@@ -6,6 +6,7 @@ import com.empresa.caru.domain.repository.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -95,6 +96,44 @@ class AuthRepositoryImpl(
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e.message ?: "Error desconocido al enviar el correo de recuperación")
+        }
+    }
+
+    override suspend fun getUserRealName(userId: String): Result<String> {
+        return try {
+            val docSnapshot = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .get()
+                .await()
+
+            val realName = docSnapshot.getString("nombre")
+                ?: FirebaseAuth.getInstance().currentUser?.displayName
+                ?: FirebaseAuth.getInstance().currentUser?.email?.substringBefore('@')
+                ?: "Usuario"
+
+            Result.Success(realName)
+        } catch (e: Exception) {
+            val fallback = FirebaseAuth.getInstance().currentUser?.displayName
+                ?: FirebaseAuth.getInstance().currentUser?.email?.substringBefore('@')
+                ?: "Usuario"
+            Result.Success(fallback)
+        }
+    }
+
+    override suspend fun getStationName(userId: String): Result<String> {
+        return try {
+            val docSnapshot = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .get()
+                .await()
+
+            val stationName = docSnapshot.getString("nombrePuesto") ?: ""
+
+            Result.Success(stationName)
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Error al obtener el nombre del puesto")
         }
     }
 }

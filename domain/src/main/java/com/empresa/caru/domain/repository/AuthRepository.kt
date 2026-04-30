@@ -54,4 +54,18 @@ interface AuthRepository {
      * @return Flow that emits the current user profile on subscription and on every auth state change.
      */
     fun observeAuthState(): Flow<UserProfile?>
+
+    /**
+     * Gets the user's real name from Firestore users collection.
+     * @param userId The user's unique ID.
+     * @return Result with the user's real name on success, or an error message on failure.
+     */
+    suspend fun getUserRealName(userId: String): Result<String>
+
+    /**
+     * Gets the station name from Firestore users collection.
+     * @param userId The user's unique ID.
+     * @return Result with the station name on success, or an error message on failure.
+     */
+    suspend fun getStationName(userId: String): Result<String>
 }

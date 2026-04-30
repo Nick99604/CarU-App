@@ -69,6 +69,12 @@ fun RegistrationStationScreen(
     val completedCount = viewModel.completedCount
     val totalSections = viewModel.totalSections
 
+    // Cargar nombre del puesto y vendedor desde Firestore al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.loadStationName()
+        viewModel.loadVendorName()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

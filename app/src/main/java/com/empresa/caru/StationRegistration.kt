@@ -15,6 +15,12 @@ data class StationRegistration(
     val averagePriceMin: String = "",
     val averagePriceMax: String = "",
 
+    // StationName
+    val stationName: String = "",
+
+    // Vendor name from Firestore
+    val vendorName: String = "",
+
     // LocationSelectionScreen
     val address: String = "",
     val latitude: Double? = null,

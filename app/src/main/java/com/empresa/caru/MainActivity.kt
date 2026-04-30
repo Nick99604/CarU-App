@@ -264,8 +264,8 @@ class MainActivity : ComponentActivity() {
                                     registrationViewModel.saveStation { success ->
                                         if (success) {
                                             homeViewModel.refresh()
-                                            registrationViewModel.reset() // Limpiar formulario después de guardar
-                                            navController.navigate("onboarding_profile_image") {
+                                            registrationViewModel.reset()
+                                            navController.navigate("station_detail") {
                                                 popUpTo("start") { inclusive = false }
                                             }
                                         }

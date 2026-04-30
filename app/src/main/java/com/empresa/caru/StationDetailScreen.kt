@@ -46,9 +46,18 @@ fun StationDetailScreen(
     val registration by viewModel.registration.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Get current user name from Firebase Auth
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    val vendorDisplayName = currentUser?.displayName ?: currentUser?.email?.substringBefore('@') ?: "Usuario"
+    // Cargar el nombre del vendedor y nombre del puesto desde Firestore al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.loadVendorName()
+        viewModel.loadStationName()
+    }
+
+    // Usar vendorName de registration (cargado desde Firestore) o fallback
+    val vendorDisplayName = registration.vendorName.ifBlank {
+        FirebaseAuth.getInstance().currentUser?.displayName
+            ?: FirebaseAuth.getInstance().currentUser?.email?.substringBefore('@')
+            ?: "Usuario"
+    }
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor = if (isDarkTheme) Color.White else Color.Black
@@ -197,7 +206,7 @@ fun StationDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    InfoField("🌮 Puesto", registration.address.ifBlank { "Mi puesto" })
+                    InfoField("🌮 Puesto", registration.stationName.ifBlank { registration.address.ifBlank { "Mi puesto" } })
                     InfoField("👤 Vendedor", vendorDisplayName)
                     InfoField("📍 Ubicación", registration.address.ifBlank { "-" })
                     InfoField("📞 Teléfono", registration.contactPhone.ifBlank { "-" })
