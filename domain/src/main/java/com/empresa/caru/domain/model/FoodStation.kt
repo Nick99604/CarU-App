@@ -9,10 +9,11 @@ data class FoodStation(
     val vendorName: String = "",
     val address: String = "",
     val phone: String = "",
+    val description: String = "", // Campo añadido
     val foodTypes: List<String> = emptyList(),
     val schedule: StationScheduleDto = StationScheduleDto(),
     val imageUrl: String? = null,
-    val ownerId: String = "", // Este ID debe coincidir con el usuario logueado
+    val ownerId: String = "",
     val priceMin: String = "",
     val priceMax: String = "",
     val latitude: Double = 0.0,

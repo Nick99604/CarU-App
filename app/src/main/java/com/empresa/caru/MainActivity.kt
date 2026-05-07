@@ -1,7 +1,6 @@
 package com.empresa.caru
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,10 +29,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.ui.theme.CarUTheme
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -196,7 +196,6 @@ class MainActivity : ComponentActivity() {
                         navController    = navController,
                         startDestination = "start"
                     ) {
-                        // Pantalla de inicio
                         composable("start") {
                             CarUAppStartScreen(
                                 onLoginClick         = { navController.navigate("login") },
@@ -207,33 +206,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Pantalla de enlace enviado
-                        composable("reset_email_sent") {
-                            ResetEmailSentScreen(
-                                onBackToLoginClick = {
-                                    navController.navigate("login") {
-                                        popUpTo("start") { inclusive = false }
-                                    }
-                                },
-                                isDarkTheme   = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding  = innerPadding
-                            )
-                        }
-
-                        // Pantalla de recuperación de contraseña
-                        composable("forgot_password") {
-                            ForgotPasswordScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onSuccess   = { navController.navigate("reset_email_sent") },
-                                authRepository = authRepository,
-                                isDarkTheme   = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding  = innerPadding
-                            )
-                        }
-
-                        // Pantalla de inicio de sesión
                         composable("login") {
                             LoginScreen(
                                 onBackClick            = { navController.popBackStack() },
@@ -250,7 +222,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Pantalla de registro de puesto (Menú principal)
                         composable("register_station") {
                             RegistrationStationScreen(
                                 viewModel = registrationViewModel,
@@ -261,77 +232,9 @@ class MainActivity : ComponentActivity() {
                                 onScheduleClick = { navController.navigate("schedule") },
                                 onImageClick = { navController.navigate("image_upload") },
                                 onSuccess = {
-                                    registrationViewModel.saveStation { success ->
-                                        if (success) {
-                                            homeViewModel.refresh()
-                                            registrationViewModel.reset()
-                                            navController.navigate("station_detail") {
-                                                popUpTo("start") { inclusive = false }
-                                            }
-                                        }
-                                    }
-                                },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Tipo de comida
-                        composable("food_type") {
-                            FoodTypeScreen(
-                                viewModel = registrationViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("station_info") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Info del puesto
-                        composable("station_info") {
-                            StationInfoScreen(
-                                viewModel = registrationViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("location_selection") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Selección de ubicación
-                        composable("location_selection") {
-                            LocationSelectionScreen(
-                                viewModel = registrationViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("schedule") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Horario
-                        composable("schedule") {
-                            ScheduleScreen(
-                                viewModel = registrationViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("image_upload") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Subir imagen
-                        composable("image_upload") {
-                            ImageUploadScreen(
-                                viewModel = registrationViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onSaveClick = {
-                                    navController.navigate("station_detail") {
+                                    homeViewModel.refresh()
+                                    registrationViewModel.reset()
+                                    navController.navigate("home") {
                                         popUpTo("start") { inclusive = false }
                                     }
                                 },
@@ -341,11 +244,46 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Pantalla: Detalle del puesto (Mi puesto)
-                        composable("station_detail") {
+                        composable("food_type") { FoodTypeScreen(registrationViewModel, { navController.popBackStack() }, { navController.navigate("station_info") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        composable("station_info") { StationInfoScreen(registrationViewModel, { navController.popBackStack() }, { navController.navigate("location_selection") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        composable("location_selection") { LocationSelectionScreen(registrationViewModel, { navController.popBackStack() }, { navController.navigate("schedule") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        composable("schedule") { ScheduleScreen(registrationViewModel, { navController.popBackStack() }, { navController.navigate("image_upload") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        
+                        composable("image_upload") {
+                            ImageUploadScreen(
+                                viewModel = registrationViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onSaveClick = {
+                                    if (registrationViewModel.isAllCompleted) {
+                                        registrationViewModel.saveStation { success ->
+                                            if (success) {
+                                                homeViewModel.refresh()
+                                                navController.navigate("home") {
+                                                    popUpTo("start") { inclusive = false }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        navController.popBackStack("register_station", inclusive = false)
+                                    }
+                                },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
+                        // Pantalla de Detalle ACTUALIZADA para recibir ID
+                        composable(
+                            route = "station_detail/{stationId}",
+                            arguments = listOf(navArgument("stationId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val stationId = backStackEntry.arguments?.getString("stationId")
                             StationDetailScreen(
+                                stationId = stationId,
                                 viewModel = registrationViewModel,
                                 favoritesViewModel = favoritesViewModel,
+                                savedStationsViewModel = savedStationsViewModel,
                                 onBackClick = { navController.popBackStack() },
                                 onEditClick = { navController.navigate("register_station") },
                                 onDeleteConfirm = {
@@ -366,42 +304,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Pantalla de selección de rol
-                        composable("register") {
-                            RegisterScreen(
-                                onBackClick      = { navController.popBackStack() },
-                                onBuscarClick    = { navController.navigate("create_user_account") },
-                                onRegistrarClick = { navController.navigate("register_station_user") },
-                                isDarkTheme      = isDarkTheme,
-                                onToggleTheme    = { isDarkTheme = !isDarkTheme },
-                                innerPadding     = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Registrar puesto (usuario vendor)
-                        composable("register_station_user") {
-                            RegisterStationUserScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onSuccess   = {
-                                    registrationViewModel.reset() // Limpiar cualquier estado previo
-                                    navController.navigate("register_station") {
-                                        popUpTo("register_station_user") { inclusive = true }
-                                    }
-                                },
-                                isDarkTheme   = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding  = innerPadding
-                            )
-                        }
-
-                        // Pantalla principal (home)
                         composable(route = "home") {
                             HomeScreen(
                                 viewModel = homeViewModel,
                                 favoritesViewModel = favoritesViewModel,
                                 savedStationsViewModel = savedStationsViewModel,
                                 onStationClick = { stationId ->
-                                    navController.navigate("station_detail")
+                                    navController.navigate("station_detail/$stationId")
                                 },
                                 onProfileClick = { navController.navigate("profile") },
                                 onFavoritesClick = { navController.navigate("favorites") },
@@ -412,701 +321,29 @@ class MainActivity : ComponentActivity() {
                                 innerPadding = innerPadding
                             )
                         }
-
-                        // Pantalla: Favoritos
-                        composable("favorites") {
-                            FavoritesScreen(
-                                viewModel = favoritesViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onStationClick = { stationId ->
-                                    navController.navigate("station_detail")
-                                },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Guardados
-                        composable("saved_stations") {
-                            val savedStationsUiState by savedStationsViewModel.uiState.collectAsState()
+                        
+                        // Rutas secundarias (favoritos, perfil, etc.)
+                        composable("favorites") { FavoritesScreen(favoritesViewModel, { navController.popBackStack() }, { id -> navController.navigate("station_detail/$id") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        
+                        composable("saved_stations") { 
+                            val state by savedStationsViewModel.uiState.collectAsState()
                             SavedStationsScreen(
-                                stations = savedStationsUiState.savedStations,
-                                isLoading = savedStationsUiState.isLoading,
-                                onStationClick = { stationId ->
-                                    navController.navigate("station_detail")
-                                },
+                                stations = state.savedStations,
+                                isLoading = state.isLoading,
+                                onStationClick = { id -> navController.navigate("station_detail/$id") },
                                 isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
                                 innerPadding = innerPadding
-                            )
+                            ) 
                         }
 
-                        // Pantalla: Perfil
-                        composable("profile") {
-                            ProfileScreen(
-                                onBackClick = { navController.popBackStack() },
-                                viewModel = profileViewModel,
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Pantalla: Ajustes
-                        composable("settings") {
-                            SettingsScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onLogout = {
-                                    FirebaseAuth.getInstance().signOut()
-                                    profileViewModel.resetToDefaults()
-                                    navController.navigate("start") {
-                                        popUpTo("start") { inclusive = false }
-                                    }
-                                },
-                                onChangePasswordClick = {
-                                    navController.navigate("forgot_password")
-                                },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Crear cuenta usuario
-                        composable("create_user_account") {
-                            CreateUserAccountScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onSuccess   = {
-                                    navController.navigate("onboarding_profile_image") {
-                                        popUpTo("start") { inclusive = false }
-                                    }
-                                },
-                                authRepository = authRepository,
-                                isDarkTheme   = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding  = innerPadding
-                            )
-                        }
-
-                        // ── FLUJO ONBOARDING ────────────────────────────────────────
-
-                        // Paso 1: Crear foto de perfil
-                        composable("onboarding_profile_image") {
-                            CreateProfileImageScreen(
-                                viewModel = onboardingViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("onboarding_interests") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Paso 2: Intereses
-                        composable("onboarding_interests") {
-                            InterestsScreen(
-                                viewModel = onboardingViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("onboarding_price_range") },
-                                onSkipClick = { navController.navigate("onboarding_price_range") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Paso 3: Rango de precio
-                        composable("onboarding_price_range") {
-                            PriceRangeScreen(
-                                viewModel = onboardingViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = { navController.navigate("onboarding_distance") },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
-
-                        // Paso 4: Distancia
-                        composable("onboarding_distance") {
-                            DistanceScreen(
-                                viewModel = onboardingViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onContinueClick = {
-                                    navController.navigate("home") {
-                                        popUpTo("start") { inclusive = false }
-                                    }
-                                },
-                                isDarkTheme = isDarkTheme,
-                                onToggleTheme = { isDarkTheme = !isDarkTheme },
-                                innerPadding = innerPadding
-                            )
-                        }
+                        composable("profile") { ProfileScreen({ navController.popBackStack() }, profileViewModel, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        composable("register") { RegisterScreen({ navController.popBackStack() }, { navController.navigate("create_user_account") }, { navController.navigate("register_station_user") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        composable("register_station_user") { RegisterStationUserScreen({ navController.popBackStack() }, { registrationViewModel.reset(); navController.navigate("register_station") { popUpTo("register_station_user") { inclusive = true } } }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        composable("create_user_account") { CreateUserAccountScreen({ navController.popBackStack() }, { navController.navigate("onboarding_profile_image") { popUpTo("start") { inclusive = false } } }, authRepository, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                     }
                 }
             }
         }
-    }
-}
-
-// ── Previews ─────────────────────────────────────────────────────────────────
-@Preview(showBackground = true, name = "Inicio - Modo Claro")
-@Composable
-fun CarUAppStartScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        CarUAppStartScreen(
-            onLoginClick         = {},
-            onCreateAccountClick = {},
-            innerPadding         = PaddingValues(),
-            isDarkTheme          = false,
-            onToggleTheme        = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Inicio - Modo Oscuro")
-@Composable
-fun CarUAppStartScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        CarUAppStartScreen(
-            onLoginClick         = {},
-            onCreateAccountClick = {},
-            innerPadding         = PaddingValues(),
-            isDarkTheme          = true,
-            onToggleTheme        = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Register - Modo Claro")
-@Composable
-fun RegisterScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        RegisterScreen(
-            onBackClick      = {},
-            onBuscarClick    = {},
-            onRegistrarClick = {},
-            isDarkTheme      = false,
-            onToggleTheme    = {},
-            innerPadding     = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Register - Modo Oscuro")
-@Composable
-fun RegisterScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        RegisterScreen(
-            onBackClick      = {},
-            onBuscarClick    = {},
-            onRegistrarClick = {},
-            isDarkTheme      = true,
-            onToggleTheme    = {},
-            innerPadding     = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "RegisterStation - Modo Claro")
-@Composable
-fun RegisterStationScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        RegistrationStationScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onFoodTypeClick = {},
-            onInfoClick = {},
-            onLocationClick = {},
-            onScheduleClick = {},
-            onImageClick = {},
-            onSuccess = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "RegisterStation - Modo Oscuro")
-@Composable
-fun RegisterStationScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        RegistrationStationScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onFoodTypeClick = {},
-            onInfoClick = {},
-            onLocationClick = {},
-            onScheduleClick = {},
-            onImageClick = {},
-            onSuccess = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "ForgotPassword - Modo Claro")
-@Composable
-fun ForgotPasswordScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        ForgotPasswordScreen(
-            onBackClick = {},
-            onSuccess = {},
-            authRepository = AuthRepositoryImpl(),
-            isDarkTheme   = false,
-            onToggleTheme = {},
-            innerPadding  = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "ForgotPassword - Modo Oscuro")
-@Composable
-fun ForgotPasswordScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        ForgotPasswordScreen(
-            onBackClick = {},
-            onSuccess = {},
-            authRepository = AuthRepositoryImpl(),
-            isDarkTheme   = true,
-            onToggleTheme = {},
-            innerPadding  = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "ResetEmailSent - Modo Claro")
-@Composable
-fun ResetEmailSentScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        ResetEmailSentScreen(
-            onBackToLoginClick = {},
-            isDarkTheme   = false,
-            onToggleTheme = {},
-            innerPadding  = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "ResetEmailSent - Modo Oscuro")
-@Composable
-fun ResetEmailSentScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        ResetEmailSentScreen(
-            onBackToLoginClick = {},
-            isDarkTheme   = true,
-            onToggleTheme = {},
-            innerPadding  = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "FoodType - Modo Claro")
-@Composable
-fun FoodTypeScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        FoodTypeScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "FoodType - Modo Oscuro")
-@Composable
-fun FoodTypeScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        FoodTypeScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "StationInfo - Modo Claro")
-@Composable
-fun StationInfoScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        StationInfoScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "StationInfo - Modo Oscuro")
-@Composable
-fun StationInfoScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        StationInfoScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "LocationSelection - Modo Claro")
-@Composable
-fun LocationSelectionScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        LocationSelectionScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "LocationSelection - Modo Oscuro")
-@Composable
-fun LocationSelectionScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        LocationSelectionScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Schedule - Modo Claro")
-@Composable
-fun ScheduleScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        ScheduleScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Schedule - Modo Oscuro")
-@Composable
-fun ScheduleScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        ScheduleScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "ImageUpload - Modo Claro")
-@Composable
-fun ImageUploadScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        ImageUploadScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onSaveClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "ImageUpload - Modo Oscuro")
-@Composable
-fun ImageUploadScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        ImageUploadScreen(
-            viewModel = RegistrationViewModel(),
-            onBackClick = {},
-            onSaveClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "RegisterStationUser - Modo Claro")
-@Composable
-fun RegisterStationUserScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        RegisterStationUserScreen(
-            onBackClick = {},
-            onSuccess = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "RegisterStationUser - Modo Oscuro")
-@Composable
-fun RegisterStationUserScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        RegisterStationUserScreen(
-            onBackClick = {},
-            onSuccess = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "StationDetail - Modo Claro")
-@Composable
-fun StationDetailScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        StationDetailScreen(
-            viewModel = RegistrationViewModel(),
-            favoritesViewModel = FavoritesViewModel(),
-            onBackClick = {},
-            onEditClick = {},
-            onDeleteConfirm = {},
-            onSaveClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "StationDetail - Modo Oscuro")
-@Composable
-fun StationDetailScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        StationDetailScreen(
-            viewModel = RegistrationViewModel(),
-            favoritesViewModel = FavoritesViewModel(),
-            onBackClick = {},
-            onEditClick = {},
-            onDeleteConfirm = {},
-            onSaveClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Favorites - Modo Claro")
-@Composable
-fun FavoritesScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        FavoritesScreen(
-            viewModel = FavoritesViewModel(),
-            onBackClick = {},
-            onStationClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Favorites - Modo Oscuro")
-@Composable
-fun FavoritesScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        FavoritesScreen(
-            viewModel = FavoritesViewModel(),
-            onBackClick = {},
-            onStationClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "CreateProfileImage - Modo Claro")
-@Composable
-fun CreateProfileImageScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        CreateProfileImageScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "CreateProfileImage - Modo Oscuro")
-@Composable
-fun CreateProfileImageScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        CreateProfileImageScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Interests - Modo Claro")
-@Composable
-fun InterestsScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        InterestsScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            onSkipClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Interests - Modo Oscuro")
-@Composable
-fun InterestsScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        InterestsScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            onSkipClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "PriceRange - Modo Claro")
-@Composable
-fun PriceRangeScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        PriceRangeScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "PriceRange - Modo Oscuro")
-@Composable
-fun PriceRangeScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        PriceRangeScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Distance - Modo Claro")
-@Composable
-fun DistanceScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        DistanceScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Distance - Modo Oscuro")
-@Composable
-fun DistanceScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        DistanceScreen(
-            viewModel = OnboardingViewModel(),
-            onBackClick = {},
-            onContinueClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Home - Modo Claro")
-@Composable
-fun HomeScreenLightPreview() {
-    CarUTheme(darkTheme = false) {
-        HomeScreen(
-            viewModel = HomeViewModel(),
-            favoritesViewModel = FavoritesViewModel(),
-            savedStationsViewModel = SavedStationsViewModel(),
-            onProfileClick = {},
-            onFavoritesClick = {},
-            onSavedStationsClick = {},
-            onSettingsClick = {},
-            onStationClick = {},
-            isDarkTheme = false,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Home - Modo Oscuro")
-@Composable
-fun HomeScreenDarkPreview() {
-    CarUTheme(darkTheme = true) {
-        HomeScreen(
-            viewModel = HomeViewModel(),
-            favoritesViewModel = FavoritesViewModel(),
-            savedStationsViewModel = SavedStationsViewModel(),
-            onProfileClick = {},
-            onFavoritesClick = {},
-            onSavedStationsClick = {},
-            onSettingsClick = {},
-            onStationClick = {},
-            isDarkTheme = true,
-            onToggleTheme = {},
-            innerPadding = PaddingValues()
-        )
     }
 }

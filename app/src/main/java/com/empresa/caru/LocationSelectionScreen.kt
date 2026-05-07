@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +40,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,6 +57,8 @@ fun LocationSelectionScreen(
     innerPadding: PaddingValues
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val registration by viewModel.registration.collectAsState()
 
     // Permission state
     var hasLocationPermission by remember {
@@ -69,26 +76,62 @@ fun LocationSelectionScreen(
         hasLocationPermission = isGranted
     }
 
-    val registration = viewModel.registration
-    var address by remember(registration.value) { mutableStateOf(registration.value.address) }
+    var address by remember { mutableStateOf(registration.address) }
+    var isUpdatingFromMap by remember { mutableStateOf(false) }
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor       = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
     val labelColor      = if (isDarkTheme) Color(0xFFAAAAAA)  else Color(0xFF555555)
     val fieldBg         = if (isDarkTheme) Color(0xFF2C2C2C)  else Color(0xFFDEDEDE)
-    val cardBg          = if (isDarkTheme) Color(0xFF2A2A2A)  else Color(0xFFFFFFFF)
     val iconBg          = if (isDarkTheme) Color(0xFF333333)  else Color(0xFFE0E0E0)
     val iconTint        = if (isDarkTheme) Color.White        else Color(0xFF333333)
     val mapBorder       = if (isDarkTheme) Color(0xFF3A3A3A)  else Color(0xFFE0E0E0)
 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    val defaultPosition = LatLng(4.7110, -74.0721) // Bogotá, Colombia
-    var selectedPosition by remember { mutableStateOf(defaultPosition) }
+    val initialPos = LatLng(registration.latitude ?: 4.7110, registration.longitude ?: -74.0721)
+    var selectedPosition by remember { mutableStateOf(initialPos) }
     var isGeocoding by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(defaultPosition, 15f)
+        position = CameraPosition.fromLatLngZoom(initialPos, 15f)
+    }
+
+    // Forward geocoding (Address -> Map)
+    fun performForwardGeocode(query: String) {
+        if (query.length < 5) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                isGeocoding = true
+                val geocoder = Geocoder(context, Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocationName(query, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val addr = addresses[0]
+                    val newLatLng = LatLng(addr.latitude, addr.longitude)
+                    withContext(Dispatchers.Main) {
+                        selectedPosition = newLatLng
+                        cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(newLatLng, 17f))
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("LocationSelection", "Forward geocoding error", e)
+            } finally {
+                withContext(Dispatchers.Main) { isGeocoding = false }
+            }
+        }
+    }
+
+    // Debounce for typing address
+    LaunchedEffect(address) {
+        if (isUpdatingFromMap) {
+            isUpdatingFromMap = false
+            return@LaunchedEffect
+        }
+        if (address != registration.address) {
+            delay(1500)
+            performForwardGeocode(address)
+        }
     }
 
     // Only enable myLocation when permission is granted
@@ -97,6 +140,30 @@ fun LocationSelectionScreen(
             isMyLocationEnabled = hasLocationPermission,
             mapType = MapType.NORMAL
         )
+    }
+
+    fun reverseGeocode(latLng: LatLng) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                withContext(Dispatchers.Main) { isGeocoding = true }
+                val geocoder = Geocoder(context, Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses: List<Address>? = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val addr = addresses[0]
+                    val foundAddress = addr.getAddressLine(0) ?: "${addr.thoroughfare ?: ""} ${addr.subThoroughfare ?: ""}".trim()
+                    withContext(Dispatchers.Main) {
+                        isUpdatingFromMap = true
+                        address = foundAddress
+                        Log.d("LocationSelection", "Geocoded address: $address")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("LocationSelection", "Reverse geocoding error", e)
+            } finally {
+                withContext(Dispatchers.Main) { isGeocoding = false }
+            }
+        }
     }
 
     fun centerOnMyLocation() {
@@ -111,40 +178,10 @@ fun LocationSelectionScreen(
                     val latLng = LatLng(it.latitude, it.longitude)
                     selectedPosition = latLng
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
-
-                    // Reverse geocode
-                    isGeocoding = true
-                    try {
-                        @Suppress("DEPRECATION")
-                        val geocoder = Geocoder(context, Locale.getDefault())
-                        @Suppress("DEPRECATION")
-                        val addresses: List<Address>? = geocoder.getFromLocation(it.latitude, it.longitude, 1)
-                        if (!addresses.isNullOrEmpty()) {
-                            val addr = addresses[0]
-                            address = addr.getAddressLine(0) ?: "${addr.thoroughfare ?: ""} ${addr.subThoroughfare ?: ""}".trim()
-                            Log.d("LocationSelection", "Geocoded address: $address")
-                        }
-                    } catch (_: Exception) { }
-                    isGeocoding = false
+                    reverseGeocode(latLng)
                 }
             }
         } catch (_: Exception) { }
-    }
-
-    fun reverseGeocode(latLng: LatLng) {
-        isGeocoding = true
-        try {
-            @Suppress("DEPRECATION")
-            val geocoder = Geocoder(context, Locale.getDefault())
-            @Suppress("DEPRECATION")
-            val addresses: List<Address>? = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            if (!addresses.isNullOrEmpty()) {
-                val addr = addresses[0]
-                address = addr.getAddressLine(0) ?: "${addr.thoroughfare ?: ""} ${addr.subThoroughfare ?: ""}".trim()
-                Log.d("LocationSelection", "Geocoded address: $address")
-            }
-        } catch (_: Exception) { }
-        isGeocoding = false
     }
 
     Scaffold(
@@ -169,7 +206,7 @@ fun LocationSelectionScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_description),
+                            contentDescription = null,
                             tint = iconTint
                         )
                     }
@@ -185,7 +222,7 @@ fun LocationSelectionScreen(
                     ) {
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                            contentDescription = stringResource(R.string.change_theme_description),
+                            contentDescription = null,
                             tint = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333)
                         )
                     }
@@ -208,7 +245,7 @@ fun LocationSelectionScreen(
                 contentDescription = null,
                 modifier = Modifier.matchParentSize(),
                 contentScale = ContentScale.Crop,
-                alpha = if (isDarkTheme) 0.06f else 0.06f
+                alpha = 0.06f
             )
 
             Column(
@@ -245,7 +282,7 @@ fun LocationSelectionScreen(
                         properties = mapProperties,
                         uiSettings = MapUiSettings(
                             zoomControlsEnabled = false,
-                            myLocationButtonEnabled = true
+                            myLocationButtonEnabled = false
                         ),
                         onMapClick = { latLng ->
                             selectedPosition = latLng
@@ -310,6 +347,11 @@ fun LocationSelectionScreen(
                             tint = iconTint,
                             modifier = Modifier.size(22.dp)
                         )
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { performForwardGeocode(address) }) {
+                            Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RedButtonColor)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),

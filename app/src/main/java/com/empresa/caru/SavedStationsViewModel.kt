@@ -10,6 +10,7 @@ import com.empresa.caru.data.repository.StationRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class SavedStationsUiState(
@@ -22,61 +23,41 @@ class SavedStationsViewModel(
     private val stationRepository: StationRepository = StationRepositoryImpl()
 ) : ViewModel() {
 
-    companion object {
-        private const val TAG = "SavedStationsVM"
-    }
-
     private val _uiState = MutableStateFlow(SavedStationsUiState())
     val uiState: StateFlow<SavedStationsUiState> = _uiState.asStateFlow()
 
     init {
-        observeSavedStations()
+        observeData()
     }
 
-    private fun observeSavedStations() {
+    private fun observeData() {
         viewModelScope.launch {
-            stationRepository.getSavedStationIdsFlow().collect { result ->
-                when (result) {
-                    is com.empresa.caru.domain.repository.Result.Success -> {
-                        val savedIds = result.data.toSet()
-                        Log.d(TAG, "saved IDs: $savedIds")
-                        SharedStationRepository.setSavedStationIds(savedIds)
-
-                        val allStations = SharedStationRepository.stations.value
-                        val savedStations = allStations.filter { it.id in savedIds }
-                        _uiState.value = _uiState.value.copy(
-                            savedStations = savedStations,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                    is com.empresa.caru.domain.repository.Result.Error -> {
-                        Log.e(TAG, "observeSavedStations: ERROR - ${result.message}")
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = result.message
-                        )
-                    }
+            // Combinamos los puestos globales con los IDs guardados de Firebase
+            combine(
+                SharedStationRepository.stations,
+                stationRepository.getSavedStationIdsFlow()
+            ) { allStations, savedResult ->
+                if (savedResult is com.empresa.caru.domain.repository.Result.Success) {
+                    val savedIds = savedResult.data.toSet()
+                    SharedStationRepository.setSavedStationIds(savedIds)
+                    allStations.filter { it.id in savedIds }
+                } else {
+                    emptyList()
                 }
+            }.collect { filteredStations ->
+                _uiState.value = SavedStationsUiState(savedStations = filteredStations, isLoading = false)
             }
         }
     }
 
     fun toggleSavedStation(station: FoodStation) {
         viewModelScope.launch {
-            val stationId = station.id
-            if (SharedStationRepository.isSavedStation(stationId)) {
-                stationRepository.unsaveStation(stationId)
+            val isSaved = SharedStationRepository.isSavedStation(station.id)
+            if (isSaved) {
+                stationRepository.unsaveStation(station.id)
             } else {
-                stationRepository.saveStation(stationId)
+                stationRepository.saveStation(station.id)
             }
-            SharedStationRepository.toggleSavedStation(stationId)
-            refresh()
         }
-    }
-
-    fun refresh() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
-        observeSavedStations()
     }
 }

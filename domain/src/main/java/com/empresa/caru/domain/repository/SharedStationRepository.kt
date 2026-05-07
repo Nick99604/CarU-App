@@ -43,6 +43,10 @@ object SharedStationRepository {
         }
     }
 
+    fun setFavoriteIds(ids: Set<String>) {
+        _favoriteIds.value = ids
+    }
+
     fun isFavorite(stationId: String): Boolean {
         return stationId in _favoriteIds.value
     }

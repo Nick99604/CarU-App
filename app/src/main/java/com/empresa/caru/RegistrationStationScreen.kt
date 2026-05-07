@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -59,17 +60,16 @@ fun RegistrationStationScreen(
     val completedColor  = Color(0xFF4CAF50)
     val pendingColor    = if (isDarkTheme) Color(0xFF555555) else Color(0xFFBDBDBD)
 
-    // Recolectar estado del ViewModel para reaccionalidad
+    val registration by viewModel.registration.collectAsState()
     val foodTypeCompleted by viewModel.foodTypeCompleted.collectAsState()
     val infoCompleted by viewModel.infoCompleted.collectAsState()
     val locationCompleted by viewModel.locationCompleted.collectAsState()
     val scheduleCompleted by viewModel.scheduleCompleted.collectAsState()
     val imageCompleted by viewModel.imageCompleted.collectAsState()
-    val isSaving by viewModel.isSaving.collectAsState() // Estado de carga
+    val isSaving by viewModel.isSaving.collectAsState()
     val completedCount = viewModel.completedCount
     val totalSections = viewModel.totalSections
 
-    // Cargar nombre del puesto y vendedor desde Firestore al iniciar
     LaunchedEffect(Unit) {
         viewModel.loadStationName()
         viewModel.loadVendorName()
@@ -78,357 +78,114 @@ fun RegistrationStationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.registration_station_title),
-                        fontFamily = CaruFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                },
+                title = { Text(text = stringResource(R.string.registration_station_title), fontFamily = CaruFontFamily, fontWeight = FontWeight.Bold, fontSize = 20.sp) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(iconBg)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_description),
-                            tint = iconTint
-                        )
+                    IconButton(onClick = onBackClick, modifier = Modifier.padding(start = 8.dp).size(40.dp).clip(CircleShape).background(iconBg)) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = iconTint)
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = onToggleTheme,
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(iconBg)
-                    ) {
-                        Icon(
-                            imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                            contentDescription = stringResource(R.string.change_theme_description),
-                            tint = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333)
-                        )
+                    IconButton(onClick = onToggleTheme, modifier = Modifier.padding(end = 8.dp).size(40.dp).clip(CircleShape).background(iconBg)) {
+                        Icon(imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode, contentDescription = null, tint = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = backgroundColor,
-                    titleContentColor = textColor
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor, titleContentColor = textColor)
             )
         },
         containerColor = backgroundColor
     ) { contentPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(backgroundColor)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.background_food_pattern),
-                contentDescription = null,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.Crop,
-                alpha = 0.06f
-            )
+        Box(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
+            Image(painter = painterResource(id = R.drawable.background_food_pattern), contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop, alpha = 0.06f)
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding)
-                    .padding(horizontal = 28.dp)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(contentPadding).padding(horizontal = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = stringResource(R.string.registration_menu_subtitle), fontFamily = CaruFontFamily, color = labelColor, fontSize = 15.sp)
 
-                Text(
-                    text = stringResource(R.string.registration_menu_subtitle),
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    color = labelColor,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                // Barra de progreso
-                val progress = completedCount.toFloat() / totalSections
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(progress.coerceIn(0f, 1f))
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(RedButtonColor)
-                    )
+                    // Barra de progreso
+                    val progress = completedCount.toFloat() / totalSections
+                    Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0))) {
+                        Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(progress.coerceIn(0f, 1f)).clip(RoundedCornerShape(4.dp)).background(RedButtonColor))
+                    }
+                    Text(text = "$completedCount/$totalSections ${stringResource(R.string.sections_completed)}", fontFamily = CaruFontFamily, color = labelColor, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "$completedCount/$totalSections ${stringResource(R.string.sections_completed)}",
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    color = labelColor,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        SectionMenuItem(
-                            icon = Icons.Filled.Restaurant,
-                            title = stringResource(R.string.section_food_type),
-                            subtitle = stringResource(R.string.section_food_type_desc),
-                            isCompleted = foodTypeCompleted,
-                            completedColor = completedColor,
-                            pendingColor = pendingColor,
-                            iconBg = iconBg,
-                            iconTint = iconTint,
-                            cardBg = cardBg,
-                            cardBorder = cardBorder,
-                            textColor = textColor,
-                            onClick = onFoodTypeClick
-                        )
-                    }
-
-                    item {
-                        SectionMenuItem(
-                            icon = Icons.Filled.Message,
-                            title = stringResource(R.string.section_information),
-                            subtitle = stringResource(R.string.section_information_desc),
-                            isCompleted = infoCompleted,
-                            completedColor = completedColor,
-                            pendingColor = pendingColor,
-                            iconBg = iconBg,
-                            iconTint = iconTint,
-                            cardBg = cardBg,
-                            cardBorder = cardBorder,
-                            textColor = textColor,
-                            onClick = onInfoClick
-                        )
-                    }
-
-                    item {
-                        SectionMenuItem(
-                            icon = Icons.Filled.LocationOn,
-                            title = stringResource(R.string.section_location),
-                            subtitle = stringResource(R.string.section_location_desc),
-                            isCompleted = locationCompleted,
-                            completedColor = completedColor,
-                            pendingColor = pendingColor,
-                            iconBg = iconBg,
-                            iconTint = iconTint,
-                            cardBg = cardBg,
-                            cardBorder = cardBorder,
-                            textColor = textColor,
-                            onClick = onLocationClick
-                        )
-                    }
-
-                    item {
-                        SectionMenuItem(
-                            icon = Icons.Filled.AccessTime,
-                            title = stringResource(R.string.section_schedule),
-                            subtitle = stringResource(R.string.section_schedule_desc),
-                            isCompleted = scheduleCompleted,
-                            completedColor = completedColor,
-                            pendingColor = pendingColor,
-                            iconBg = iconBg,
-                            iconTint = iconTint,
-                            cardBg = cardBg,
-                            cardBorder = cardBorder,
-                            textColor = textColor,
-                            onClick = onScheduleClick
-                        )
-                    }
-
-                    item {
-                        SectionMenuItem(
-                            icon = Icons.Filled.AddCircleOutline,
-                            title = stringResource(R.string.section_photo),
-                            subtitle = stringResource(R.string.section_photo_desc),
-                            isCompleted = imageCompleted,
-                            completedColor = completedColor,
-                            pendingColor = pendingColor,
-                            iconBg = iconBg,
-                            iconTint = iconTint,
-                            cardBg = cardBg,
-                            cardBorder = cardBorder,
-                            textColor = textColor,
-                            onClick = onImageClick
-                        )
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                item {
+                    val foodSubtitle = if (foodTypeCompleted) {
+                        val types = registration.foodTypes.map { it.label }.toMutableList()
+                        if (registration.otherFoodType.isNotBlank()) types.add(registration.otherFoodType)
+                        types.joinToString(", ")
+                    } else stringResource(R.string.section_food_type_desc)
+                    
+                    SectionMenuItem(Icons.Filled.Restaurant, stringResource(R.string.section_food_type), foodSubtitle, foodTypeCompleted, completedColor, pendingColor, iconBg, iconTint, cardBg, cardBorder, textColor, onFoodTypeClick)
+                }
+                
+                item {
+                    val infoSubtitle = if (infoCompleted) registration.description.ifBlank { "Información completada" } else stringResource(R.string.section_information_desc)
+                    SectionMenuItem(Icons.Filled.Message, stringResource(R.string.section_information), infoSubtitle, infoCompleted, completedColor, pendingColor, iconBg, iconTint, cardBg, cardBorder, textColor, onInfoClick)
+                }
+                
+                item {
+                    val locationSubtitle = if (locationCompleted) registration.address else stringResource(R.string.section_location_desc)
+                    SectionMenuItem(Icons.Filled.LocationOn, stringResource(R.string.section_location), locationSubtitle, locationCompleted, completedColor, pendingColor, iconBg, iconTint, cardBg, cardBorder, textColor, onLocationClick)
+                }
+                
+                item {
+                    val scheduleSubtitle = if (scheduleCompleted) "Horario configurado" else stringResource(R.string.section_schedule_desc)
+                    SectionMenuItem(Icons.Filled.AccessTime, stringResource(R.string.section_schedule), scheduleSubtitle, scheduleCompleted, completedColor, pendingColor, iconBg, iconTint, cardBg, cardBorder, textColor, onScheduleClick)
+                }
+                
+                item {
+                    val photoSubtitle = if (imageCompleted) "Imagen seleccionada" else stringResource(R.string.section_photo_desc)
+                    SectionMenuItem(Icons.Filled.AddCircleOutline, stringResource(R.string.section_photo), photoSubtitle, imageCompleted, completedColor, pendingColor, iconBg, iconTint, cardBg, cardBorder, textColor, onImageClick)
                 }
 
-                // BOTÓN CORREGIDO
-                Button(
-                    onClick = {
-                        Log.d("RegStationScreen", "BOTÓN PRESIONADO - isAllCompleted=${viewModel.isAllCompleted}")
-                        if (viewModel.isAllCompleted) {
-                            Log.d("RegStationScreen", "Llamando viewModel.saveStation...")
-                            viewModel.saveStation { success ->
-                                Log.d("RegStationScreen", "saveStation callback: success=$success")
-                                if (success) {
-                                    onSuccess()
-                                }
-                            }
-                        } else {
-                            Log.d("RegStationScreen", "isAllCompleted es false, no se puede guardar")
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (viewModel.isAllCompleted) RedButtonColor
-                        else if (isDarkTheme) Color(0xFF444444) else Color(0xFFBDBDBD),
-                        contentColor = Color.White,
-                        disabledContainerColor = if (isDarkTheme) Color(0xFF444444) else Color(0xFFBDBDBD),
-                        disabledContentColor = Color.White.copy(alpha = 0.5f)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = if (viewModel.isAllCompleted) 4.dp else 0.dp
-                    ),
-                    enabled = viewModel.isAllCompleted && !isSaving
-                ) {
-                    if (isSaving) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        if (viewModel.isAllCompleted) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(
-                            text = if (viewModel.isAllCompleted)
-                                stringResource(R.string.finish_registration)
-                            else
-                                stringResource(R.string.complete_all_sections),
-                            fontFamily = CaruFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { if (viewModel.isAllCompleted) { viewModel.saveStation { if (it) onSuccess() } } },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (viewModel.isAllCompleted) RedButtonColor else if (isDarkTheme) Color(0xFF444444) else Color(0xFFBDBDBD),
+                            contentColor = Color.White
+                        ),
+                        enabled = viewModel.isAllCompleted && !isSaving
+                    ) {
+                        if (isSaving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        else Text(text = if (viewModel.isAllCompleted) stringResource(R.string.finish_registration) else stringResource(R.string.complete_all_sections), fontFamily = CaruFontFamily, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
+                    Spacer(modifier = Modifier.height(40.dp))
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
 }
 
 @Composable
-private fun SectionMenuItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    isCompleted: Boolean,
-    completedColor: Color,
-    pendingColor: Color,
-    iconBg: Color,
-    iconTint: Color,
-    cardBg: Color,
-    cardBorder: Color,
-    textColor: Color,
-    onClick: () -> Unit
-) {
+private fun SectionMenuItem(icon: ImageVector, title: String, subtitle: String, isCompleted: Boolean, completedColor: Color, pendingColor: Color, iconBg: Color, iconTint: Color, cardBg: Color, cardBorder: Color, textColor: Color, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(cardBg)
-            .border(
-                width = if (isCompleted) 2.dp else 1.dp,
-                color = if (isCompleted) completedColor else cardBorder,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(cardBg).border(width = if (isCompleted) 2.dp else 1.dp, color = if (isCompleted) completedColor else cardBorder, shape = RoundedCornerShape(16.dp)).clickable { onClick() }.padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(iconBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(22.dp)
-            )
+        Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(iconBg), contentAlignment = Alignment.Center) {
+            Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(22.dp))
         }
-
         Spacer(modifier = Modifier.width(14.dp))
-
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontFamily = CaruFontFamily,
-                fontWeight = FontWeight.Bold,
-                color = textColor,
-                fontSize = 16.sp
-            )
-            Text(
-                text = subtitle,
-                fontFamily = CaruFontFamily,
-                fontWeight = FontWeight.Normal,
-                color = if (isCompleted) completedColor else pendingColor,
-                fontSize = 12.sp
-            )
+            Text(text = title, fontFamily = CaruFontFamily, fontWeight = FontWeight.Bold, color = textColor, fontSize = 16.sp)
+            Text(text = subtitle, fontFamily = CaruFontFamily, color = if (isCompleted) completedColor else pendingColor, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-
         if (isCompleted) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(completedColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = stringResource(R.string.section_completed),
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
+            Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(completedColor), contentAlignment = Alignment.Center) {
+                Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
             }
         } else {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = pendingColor,
-                modifier = Modifier.size(24.dp)
-            )
+            Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = pendingColor, modifier = Modifier.size(24.dp))
         }
     }
 }

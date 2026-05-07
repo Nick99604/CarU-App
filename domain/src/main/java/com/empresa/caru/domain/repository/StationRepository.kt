@@ -12,8 +12,16 @@ interface StationRepository {
     suspend fun updateStation(station: FoodStation): Result<Unit>
     suspend fun deleteStation(stationId: String, imageUrl: String?): Result<Unit>
     suspend fun uploadImage(stationId: String, imageUri: String): Result<String>
+    
+    // Guardados
     suspend fun saveStation(stationId: String): Result<Unit>
     suspend fun unsaveStation(stationId: String): Result<Unit>
-    suspend fun saveFoodStation(station: FoodStation): Result<Unit>
     fun getSavedStationIdsFlow(): Flow<Result<List<String>>>
+    
+    // Favoritos
+    suspend fun favoriteStation(stationId: String): Result<Unit>
+    suspend fun unfavoriteStation(stationId: String): Result<Unit>
+    fun getFavoriteStationIdsFlow(): Flow<Result<List<String>>>
+
+    suspend fun saveFoodStation(station: FoodStation): Result<Unit>
 }

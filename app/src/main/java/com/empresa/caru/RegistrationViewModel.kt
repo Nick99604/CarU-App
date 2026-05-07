@@ -9,6 +9,7 @@ import com.empresa.caru.domain.model.StationScheduleDto
 import com.empresa.caru.domain.repository.Result
 import com.empresa.caru.domain.repository.StationRepository
 import com.empresa.caru.domain.repository.AuthRepository
+import com.empresa.caru.domain.repository.SharedStationRepository
 import com.empresa.caru.data.repository.StationRepositoryImpl
 import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.google.firebase.auth.FirebaseAuth
@@ -22,10 +23,6 @@ class RegistrationViewModel(
     private val authRepository: AuthRepository = AuthRepositoryImpl(),
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
-
-    companion object {
-        private const val TAG = "RegistrationVM"
-    }
 
     private val _registration = MutableStateFlow(StationRegistration())
     val registration: StateFlow<StationRegistration> = _registration.asStateFlow()
@@ -48,107 +45,112 @@ class RegistrationViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    private var savedStationId: String? = null
+    private var _currentStationId = MutableStateFlow<String?>(null)
 
     val isAllCompleted: Boolean
-        get() = _foodTypeCompleted.value && _infoCompleted.value && _locationCompleted.value &&
-                _scheduleCompleted.value && _imageCompleted.value
+        get() = _foodTypeCompleted.value && _infoCompleted.value && _locationCompleted.value && _scheduleCompleted.value
 
     val completedCount: Int
-        get() = listOf(
-            _foodTypeCompleted.value,
-            _infoCompleted.value,
-            _locationCompleted.value,
-            _scheduleCompleted.value,
-            _imageCompleted.value
-        ).count { it }
+        get() = listOf(_foodTypeCompleted.value, _infoCompleted.value, _locationCompleted.value, _scheduleCompleted.value, _imageCompleted.value).count { it }
 
     val totalSections = 5
 
     fun updateFoodTypes(foodTypes: List<FoodType>, otherType: String) {
-        _registration.value = _registration.value.copy(
-            foodTypes = foodTypes,
-            otherFoodType = otherType
-        )
+        _registration.value = _registration.value.copy(foodTypes = foodTypes, otherFoodType = otherType)
         _foodTypeCompleted.value = foodTypes.isNotEmpty() || otherType.isNotBlank()
     }
 
     fun updateInfo(description: String, phone: String, priceMin: String, priceMax: String) {
-        _registration.value = _registration.value.copy(
-            description = description,
-            contactPhone = phone,
-            averagePriceMin = priceMin,
-            averagePriceMax = priceMax
-        )
+        _registration.value = _registration.value.copy(description = description, contactPhone = phone, averagePriceMin = priceMin, averagePriceMax = priceMax)
         _infoCompleted.value = description.isNotBlank() && phone.isNotBlank()
     }
 
-    fun updateStationName(name: String) {
-        _registration.value = _registration.value.copy(stationName = name)
-    }
-
-    /**
-     * Carga el nombre real del vendedor y nombre del puesto desde Firestore
-     */
-    fun loadVendorName(onLoaded: (String) -> Unit = {}) {
-        val userId = firebaseAuth.currentUser?.uid ?: return
-        viewModelScope.launch {
-            when (val result = authRepository.getUserRealName(userId)) {
-                is Result.Success -> {
-                    _registration.value = _registration.value.copy(vendorName = result.data)
-                    onLoaded(result.data)
-                }
-                is Result.Error -> {
-                    val fallback = firebaseAuth.currentUser?.displayName
-                        ?: firebaseAuth.currentUser?.email?.substringBefore('@')
-                        ?: "Usuario"
-                    _registration.value = _registration.value.copy(vendorName = fallback)
-                    onLoaded(fallback)
-                }
-            }
-        }
-    }
-
-    /**
-     * Carga el nombre del puesto desde Firestore (collection users)
-     */
-    fun loadStationName() {
-        val userId = firebaseAuth.currentUser?.uid ?: return
-        viewModelScope.launch {
-            when (val result = authRepository.getStationName(userId)) {
-                is Result.Success -> {
-                    _registration.value = _registration.value.copy(stationName = result.data)
-                }
-                is Result.Error -> {
-                    Log.w(TAG, "loadStationName: no se pudo cargar, ${result.message}")
-                }
-            }
-        }
-    }
-
     fun updateAddress(address: String, latitude: Double? = null, longitude: Double? = null) {
-        _registration.value = _registration.value.copy(
-            address = address,
-            latitude = latitude,
-            longitude = longitude
-        )
+        _registration.value = _registration.value.copy(address = address, latitude = latitude, longitude = longitude)
         _locationCompleted.value = address.isNotBlank()
+    }
+
+    fun loadStationToRegistration(stationId: String?) {
+        if (stationId == null) {
+            reset()
+            return
+        }
+        val station = SharedStationRepository.getStationById(stationId)
+        station?.let { s ->
+            _currentStationId.value = stationId
+            val mappedTypes = FoodType.entries.filter { it.label in s.foodTypes }
+            val otherTypesList = s.foodTypes.filter { type -> FoodType.entries.none { it.label == type } }
+            
+            _registration.value = StationRegistration(
+                foodTypes = mappedTypes,
+                otherFoodType = otherTypesList.joinToString(", "),
+                description = s.description,
+                contactPhone = s.phone,
+                stationName = s.name,
+                vendorName = s.vendorName,
+                address = s.address,
+                latitude = s.latitude,
+                longitude = s.longitude,
+                averagePriceMin = s.priceMin,
+                averagePriceMax = s.priceMax,
+                stationImageUri = s.imageUrl
+            )
+            _foodTypeCompleted.value = true
+            _infoCompleted.value = true
+            _locationCompleted.value = true
+            _scheduleCompleted.value = true
+            _imageCompleted.value = s.imageUrl != null
+        }
+    }
+
+    fun saveStation(onComplete: (Boolean) -> Unit = {}) {
+        if (_isSaving.value) return
+        viewModelScope.launch {
+            _isSaving.value = true
+            try {
+                val reg = _registration.value
+                val userId = firebaseAuth.currentUser?.uid ?: return@launch
+                val foodTypesList = reg.foodTypes.map { it.label }.toMutableList()
+                if (reg.otherFoodType.isNotBlank()) foodTypesList.add(reg.otherFoodType)
+
+                val station = FoodStation(
+                    id = _currentStationId.value ?: "",
+                    name = reg.stationName.ifBlank { reg.address.ifBlank { "Mi Puesto" } },
+                    vendorName = reg.vendorName.ifBlank { "Vendedor" },
+                    address = reg.address,
+                    phone = reg.contactPhone,
+                    description = reg.description,
+                    foodTypes = foodTypesList,
+                    imageUrl = reg.stationImageUri,
+                    priceMin = reg.averagePriceMin,
+                    priceMax = reg.averagePriceMax,
+                    latitude = reg.latitude ?: 0.0,
+                    longitude = reg.longitude ?: 0.0,
+                    ownerId = userId
+                )
+
+                val result = if (station.id.isBlank()) stationRepository.createStation(station) else stationRepository.updateStation(station).let { Result.Success(station.id) }
+                
+                if (result is Result.Success) {
+                    reset()
+                    onComplete(true)
+                } else onComplete(false)
+            } catch (e: Exception) {
+                onComplete(false)
+            } finally {
+                _isSaving.value = false
+            }
+        }
     }
 
     fun updateSchedule(schedule: StationSchedule) {
         _registration.value = _registration.value.copy(schedule = schedule)
-        _scheduleCompleted.value = _registration.value.schedule.let { sched ->
-            sched.monday.isOpen || sched.tuesday.isOpen || sched.wednesday.isOpen ||
-            sched.thursday.isOpen || sched.friday.isOpen || sched.saturday.isOpen ||
-            sched.sunday.isOpen
-        }
+        _scheduleCompleted.value = true
     }
 
     fun updateImage(uri: String?) {
         _registration.value = _registration.value.copy(stationImageUri = uri)
-        // Imagen es opcional - solo marca completado si hay una imagen
-        // _imageCompleted.value = uri != null
-        _imageCompleted.value = true // Siempre completado (imagen opcional)
+        _imageCompleted.value = true
     }
 
     fun reset() {
@@ -158,155 +160,32 @@ class RegistrationViewModel(
         _locationCompleted.value = false
         _scheduleCompleted.value = false
         _imageCompleted.value = false
-        savedStationId = null
+        _currentStationId.value = null
     }
 
-    /**
-     * Limpia solo el estado de completado para comenzar fresh
-     * pero mantiene los datos (para edición)
-     */
-    fun resetCompletionFlags() {
-        _foodTypeCompleted.value = false
-        _infoCompleted.value = false
-        _locationCompleted.value = false
-        _scheduleCompleted.value = false
-        _imageCompleted.value = false
-    }
-
-    /**
-     * Guarda el puesto en Firestore
-     */
-    fun saveStation(onComplete: (Boolean) -> Unit = {}) {
-        if (_isSaving.value) {
-            Log.w(TAG, "saveStation: ya se está guardando, ignorando...")
-            return
-        }
-
+    fun loadVendorName() {
+        val userId = firebaseAuth.currentUser?.uid ?: return
         viewModelScope.launch {
-            _isSaving.value = true
-            Log.d(TAG, "saveStation: iniciando...")
-            Log.d(TAG, "  registration=${_registration.value}")
-
-            try {
-                val reg = _registration.value
-                val currentUser = firebaseAuth.currentUser
-                val userId = currentUser?.uid ?: run {
-                    Log.e(TAG, "saveStation: No hay usuario autenticado")
-                    _isSaving.value = false
-                    onComplete(false)
-                    return@launch
-                }
-
-                // Obtener el nombre real del usuario desde Firestore
-                val vendorName = when (val result = authRepository.getUserRealName(userId)) {
-                    is Result.Success -> result.data
-                    is Result.Error -> {
-                        Log.w(TAG, "getUserRealName error: ${result.message}, usando fallback")
-                        currentUser.displayName ?: currentUser.email?.substringBefore('@') ?: "Usuario"
-                    }
-                }
-
-                // Obtener el nombre del puesto desde Firestore (para evitar race condition)
-                val stationName = when (val result = authRepository.getStationName(userId)) {
-                    is Result.Success -> result.data
-                    is Result.Error -> {
-                        Log.w(TAG, "getStationName error: ${result.message}, usando fallback")
-                        reg.stationName
-                    }
-                }
-
-                Log.d(TAG, "saveStation: userId=$userId, vendorName=$vendorName, stationName=$stationName")
-                Log.d(TAG, "  foodTypes=${reg.foodTypes}, count=${reg.foodTypes.size}")
-                Log.d(TAG, "  address=${reg.address}")
-                Log.d(TAG, "  phone=${reg.contactPhone}")
-                Log.d(TAG, "  schedule es default: ${reg.schedule == StationSchedule()}")
-
-                // Convertir StationSchedule (UI) a StationScheduleDto (domain)
-                val scheduleDto = StationScheduleDto(
-                    monday = convertDaySchedule(reg.schedule.monday),
-                    tuesday = convertDaySchedule(reg.schedule.tuesday),
-                    wednesday = convertDaySchedule(reg.schedule.wednesday),
-                    thursday = convertDaySchedule(reg.schedule.thursday),
-                    friday = convertDaySchedule(reg.schedule.friday),
-                    saturday = convertDaySchedule(reg.schedule.saturday),
-                    sunday = convertDaySchedule(reg.schedule.sunday)
-                )
-
-                val station = FoodStation(
-                    id = "",
-                    name = stationName.ifBlank { reg.address.ifBlank { "Mi Puesto" } },
-                    vendorName = vendorName,
-                    address = reg.address,
-                    phone = reg.contactPhone,
-                    foodTypes = reg.foodTypes.map { it.label },
-                    schedule = scheduleDto,
-                    imageUrl = reg.stationImageUri,
-                    priceMin = reg.averagePriceMin,
-                    priceMax = reg.averagePriceMax,
-                    latitude = reg.latitude ?: 0.0,
-                    longitude = reg.longitude ?: 0.0,
-                    ownerId = userId
-                )
-
-                Log.d(TAG, "saveStation: station=$station")
-                Log.d(TAG, "  name=${station.name}, address=${station.address}")
-                Log.d(TAG, "  phone=${station.phone}, foodTypes=${station.foodTypes}")
-                Log.d(TAG, "  ownerId=${station.ownerId}")
-                Log.d(TAG, "  schedule=${station.schedule}")
-                Log.d(TAG, "  latitude=${station.latitude}, longitude=${station.longitude}")
-
-                when (val result = stationRepository.createStation(station)) {
-                    is Result.Success -> {
-                        Log.d(TAG, "saveStation: ÉXITO, ID=${result.data}")
-                        savedStationId = result.data
-                        _isSaving.value = false
-                        reset()
-                        onComplete(true)
-                    }
-                    is Result.Error -> {
-                        Log.e(TAG, "saveStation: ERROR - ${result.message}")
-                        _isSaving.value = false
-                        onComplete(false)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "saveStation: EXCEPTION - ${e.message}", e)
-                _isSaving.value = false
-                onComplete(false)
-            }
+            val result = authRepository.getUserRealName(userId)
+            if (result is Result.Success) _registration.value = _registration.value.copy(vendorName = result.data)
         }
     }
 
-    private fun convertDaySchedule(day: DaySchedule): DayScheduleDto {
-        return DayScheduleDto(
-            isOpen = day.isOpen,
-            startTime = day.startTime,
-            endTime = day.endTime
-        )
+    fun loadStationName() {
+        val userId = firebaseAuth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            val result = authRepository.getStationName(userId)
+            if (result is Result.Success && result.data.isNotBlank()) _registration.value = _registration.value.copy(stationName = result.data)
+        }
     }
 
     fun deleteStation(onComplete: (Boolean) -> Unit = {}) {
-        val stationId = savedStationId
-        if (stationId == null) {
-            Log.w(TAG, "deleteStation: No hay stationId guardado")
-            onComplete(false)
-            return
-        }
-
+        val id = _currentStationId.value ?: return
         viewModelScope.launch {
-            Log.d(TAG, "deleteStation: eliminando $stationId")
-            when (val result = stationRepository.deleteStation(stationId, null)) {
-                is Result.Success -> {
-                    Log.d(TAG, "deleteStation: ÉXITO")
-                    savedStationId = null
-                    reset()
-                    onComplete(true)
-                }
-                is Result.Error -> {
-                    Log.e(TAG, "deleteStation: ERROR - ${result.message}")
-                    onComplete(false)
-                }
-            }
+            if (stationRepository.deleteStation(id, null) is Result.Success) {
+                reset()
+                onComplete(true)
+            } else onComplete(false)
         }
     }
 }
