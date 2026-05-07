@@ -8,6 +8,7 @@ import com.empresa.caru.domain.repository.StationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
@@ -198,28 +199,34 @@ class StationRepositoryImpl(
     }
 
     override fun getSavedStationIdsFlow(): Flow<Result<List<String>>> = callbackFlow {
-        val userId = auth.currentUser?.uid
-        if (userId == null) {
-            trySend(Result.Success(emptyList()))
-            close()
-            return@callbackFlow
+        var listener: ListenerRegistration? = null
+        
+        val authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            val userId = firebaseAuth.currentUser?.uid
+            listener?.remove()
+            if (userId != null) {
+                listener = firestore.collection(SAVED_STATIONS_COLLECTION)
+                    .whereEqualTo("userId", userId)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            trySend(Result.Error(error.message ?: "Error desconocido"))
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null) {
+                            val stationIds = snapshot.documents.mapNotNull { it.getString("stationId") }
+                            trySend(Result.Success(stationIds))
+                        }
+                    }
+            } else {
+                trySend(Result.Success(emptyList()))
+            }
         }
 
-        val listener = firestore.collection(SAVED_STATIONS_COLLECTION)
-            .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Result.Error(error.message ?: "Error desconocido"))
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val stationIds = snapshot.documents.mapNotNull { it.getString("stationId") }
-                    trySend(Result.Success(stationIds))
-                }
-            }
-
-        awaitClose { listener.remove() }
+        auth.addAuthStateListener(authListener)
+        awaitClose { 
+            auth.removeAuthStateListener(authListener)
+            listener?.remove() 
+        }
     }
 
     override suspend fun favoriteStation(stationId: String): Result<Unit> {
@@ -252,27 +259,34 @@ class StationRepositoryImpl(
     }
 
     override fun getFavoriteStationIdsFlow(): Flow<Result<List<String>>> = callbackFlow {
-        val userId = auth.currentUser?.uid
-        if (userId == null) {
-            trySend(Result.Success(emptyList()))
-            close()
-            return@callbackFlow
+        var listener: ListenerRegistration? = null
+        
+        val authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            val userId = firebaseAuth.currentUser?.uid
+            listener?.remove()
+            if (userId != null) {
+                listener = firestore.collection(FAVORITES_COLLECTION)
+                    .whereEqualTo("userId", userId)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            trySend(Result.Error(error.message ?: "Error desconocido"))
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null) {
+                            val ids = snapshot.documents.mapNotNull { it.getString("stationId") }
+                            trySend(Result.Success(ids))
+                        }
+                    }
+            } else {
+                trySend(Result.Success(emptyList()))
+            }
         }
 
-        val listener = firestore.collection(FAVORITES_COLLECTION)
-            .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Result.Error(error.message ?: "Error desconocido"))
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val ids = snapshot.documents.mapNotNull { it.getString("stationId") }
-                    trySend(Result.Success(ids))
-                }
-            }
-        awaitClose { listener.remove() }
+        auth.addAuthStateListener(authListener)
+        awaitClose { 
+            auth.removeAuthStateListener(authListener)
+            listener?.remove() 
+        }
     }
 
     override suspend fun saveFoodStation(station: FoodStation): Result<Unit> {
