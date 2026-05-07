@@ -158,10 +158,12 @@ fun CreateProfileImageScreen(
                             color = if (state.profileImageUri != null) RedButtonColor else cardBg,
                             shape = CircleShape
                         )
-                        .clickable { imagePickerLauncher.launch("image/*") },
+                        .clickable(enabled = !state.isUploading) { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (state.profileImageUri != null) {
+                    if (state.isUploading) {
+                        CircularProgressIndicator(color = RedButtonColor)
+                    } else if (state.profileImageUri != null) {
                         AsyncImage(
                             model = state.profileImageUri,
                             contentDescription = "Foto de perfil",
@@ -193,8 +195,18 @@ fun CreateProfileImageScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                if (state.errorMessage != null) {
+                    Text(
+                        text = state.errorMessage!!,
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 Text(
-                    text = "Toca para seleccionar una imagen",
+                    text = if (state.isUploading) "Subiendo..." else "Toca para seleccionar una imagen",
                     fontFamily = CaruFontFamily,
                     fontSize = 13.sp,
                     color = textColor.copy(alpha = 0.6f),

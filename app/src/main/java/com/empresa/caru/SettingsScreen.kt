@@ -13,9 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    onLogout: () -> Unit,
     onChangePasswordClick: () -> Unit,
+    onDeleteStationClick: () -> Unit,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     innerPadding: PaddingValues
@@ -48,6 +48,7 @@ fun SettingsScreen(
 
     var selectedDistanceUnit by remember { mutableStateOf("Kilómetros") }
     var showPasswordResetDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var passwordResetSent by remember { mutableStateOf(false) }
 
     // Password Reset Dialog
@@ -106,39 +107,25 @@ fun SettingsScreen(
         )
     }
 
-    // Logout Confirmation Dialog
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    if (showLogoutDialog) {
+    // Delete Station Dialog
+    if (showDeleteConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = {
-                Text(
-                    text = "Cerrar sesión",
-                    fontFamily = CaruFontFamily,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = "¿Estás seguro de que quieres cerrar sesión?",
-                    fontFamily = CaruFontFamily
-                )
-            },
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Eliminar puesto", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Estás seguro de que deseas eliminar tu puesto? Esta acción no se puede deshacer.") },
             confirmButton = {
-                TextButton(onClick = {
-                    showLogoutDialog = false
-                    onLogout()
-                }) {
-                    Text(
-                        text = "Cerrar sesión",
-                        color = RedButtonColor,
-                        fontFamily = CaruFontFamily
-                    )
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteStationClick()
+                    }
+                ) {
+                    Text("Eliminar", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancelar", fontFamily = CaruFontFamily)
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancelar")
                 }
             }
         )
@@ -233,22 +220,6 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Sección: Cuenta
-                SettingsSection(title = "Cuenta") {
-                    SettingsOptionRow(
-                        icon = Icons.AutoMirrored.Filled.Logout,
-                        label = "Cerrar sesión",
-                        textColor = textColor,
-                        cardBg = cardBg,
-                        isDestructive = true,
-                        onClick = {
-                            showLogoutDialog = true
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // Sección: Preferencias
                 SettingsSection(title = "Preferencias") {
                     SettingsOptionRow(
@@ -274,6 +245,22 @@ fun SettingsScreen(
                             )
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Sección: Gestión de Puesto
+                SettingsSection(title = "Gestión de Puesto") {
+                    SettingsOptionRow(
+                        icon = Icons.Default.Delete,
+                        label = "Eliminar puesto",
+                        textColor = textColor,
+                        cardBg = cardBg,
+                        isDestructive = true,
+                        onClick = {
+                            showDeleteConfirmDialog = true
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))

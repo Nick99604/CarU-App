@@ -2,7 +2,8 @@ package com.empresa.caru
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
@@ -55,6 +58,9 @@ fun LoginScreen(
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    val emailFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
 
     val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
     val textColor = if (isDarkTheme) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
@@ -192,6 +198,11 @@ fun LoginScreen(
                     .padding(bottom = 4.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(emailBackgroundColor)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { emailFocusRequester.requestFocus() }
+                    )
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 BasicTextField(
@@ -201,6 +212,9 @@ fun LoginScreen(
                         emailError = null
                     },
                     enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(emailFocusRequester),
                     textStyle = TextStyle(
                         color = textColor,
                         fontFamily = CaruFontFamily,
@@ -261,6 +275,11 @@ fun LoginScreen(
                     .padding(bottom = 4.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(passwordBackgroundColor)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { passwordFocusRequester.requestFocus() }
+                    )
                     .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -274,6 +293,9 @@ fun LoginScreen(
                             passwordError = null
                         },
                         enabled = !isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(passwordFocusRequester),
                         textStyle = TextStyle(
                             color = textColor,
                             fontFamily = CaruFontFamily,

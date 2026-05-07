@@ -1,5 +1,6 @@
 package com.empresa.caru.data.repository
 
+import android.net.Uri
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.domain.repository.Result
 import com.empresa.caru.domain.repository.UserProfile
@@ -7,22 +8,27 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 /**
  * Firebase implementation of [AuthRepository].
  * Uses Firebase Auth for user registration, login, and password reset.
  */
 class AuthRepositoryImpl(
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
 ) : AuthRepository {
 
     companion object {
         const val ERROR_EMAIL_NOT_FOUND = "EMAIL_NOT_FOUND"
         const val ERROR_WRONG_PASSWORD = "WRONG_PASSWORD"
+        private const val USERS_COLLECTION = "users"
+        private const val PROFILE_IMAGES_PATH = "profile_images"
     }
 
     /**
@@ -35,7 +41,8 @@ class AuthRepositoryImpl(
                 UserProfile(
                     userId = user.uid,
                     displayName = user.displayName ?: "",
-                    email = user.email ?: ""
+                    email = user.email ?: "",
+                    photoUrl = user.photoUrl?.toString()
                 )
             }
             trySend(profile)
@@ -50,12 +57,17 @@ class AuthRepositoryImpl(
             val user = authResult.user
                 ?: return Result.Error("No se pudo crear el usuario")
 
-            user.displayName?.let {
-                val profileUpdate = com.google.firebase.auth.UserProfileChangeRequest.Builder()
-                    .setDisplayName(displayName)
-                    .build()
-                user.updateProfile(profileUpdate).await()
-            }
+            val profileUpdate = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                .setDisplayName(displayName)
+                .build()
+            user.updateProfile(profileUpdate).await()
+
+            // Initialize user document in Firestore
+            updateUserData(user.uid, mapOf(
+                "nombre" to displayName,
+                "email" to email,
+                "createdAt" to System.currentTimeMillis()
+            ))
 
             Result.Success(user.uid)
         } catch (e: Exception) {
@@ -106,7 +118,7 @@ class AuthRepositoryImpl(
     override suspend fun getUserRealName(userId: String): Result<String> {
         return try {
             val docSnapshot = FirebaseFirestore.getInstance()
-                .collection("users")
+                .collection(USERS_COLLECTION)
                 .document(userId)
                 .get()
                 .await()
@@ -128,7 +140,7 @@ class AuthRepositoryImpl(
     override suspend fun getStationName(userId: String): Result<String> {
         return try {
             val docSnapshot = FirebaseFirestore.getInstance()
-                .collection("users")
+                .collection(USERS_COLLECTION)
                 .document(userId)
                 .get()
                 .await()
@@ -138,6 +150,42 @@ class AuthRepositoryImpl(
             Result.Success(stationName)
         } catch (e: Exception) {
             Result.Error(e.message ?: "Error al obtener el nombre del puesto")
+        }
+    }
+
+    override suspend fun updateUserData(userId: String, updates: Map<String, Any>): Result<Unit> {
+        return try {
+            FirebaseFirestore.getInstance()
+                .collection(USERS_COLLECTION)
+                .document(userId)
+                .set(updates, com.google.firebase.firestore.SetOptions.merge())
+                .await()
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Error al actualizar datos de usuario en Firestore")
+        }
+    }
+
+    override suspend fun uploadProfileImage(userId: String, imageUri: String): Result<String> {
+        return try {
+            val imageRef = storage.reference.child("$PROFILE_IMAGES_PATH/$userId/${UUID.randomUUID()}")
+            val uri = Uri.parse(imageUri)
+            imageRef.putFile(uri).await()
+            val downloadUrl = imageRef.downloadUrl.await().toString()
+            
+            // También actualizamos el perfil de Firebase Auth
+            val user = firebaseAuth.currentUser
+            val profileUpdate = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                .setPhotoUri(Uri.parse(downloadUrl))
+                .build()
+            user?.updateProfile(profileUpdate)?.await()
+            
+            // Y el documento en Firestore
+            updateUserData(userId, mapOf("fotoPerfilUrl" to downloadUrl))
+            
+            Result.Success(downloadUrl)
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Error al subir la imagen de perfil")
         }
     }
 }

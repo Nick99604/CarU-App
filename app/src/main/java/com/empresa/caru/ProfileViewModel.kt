@@ -66,7 +66,8 @@ class ProfileViewModel(
                     _uiState.update {
                         it.copy(
                             userName = userProfile.displayName,
-                            userEmail = userProfile.email
+                            userEmail = userProfile.email,
+                            profileImageUrl = userProfile.photoUrl
                         )
                     }
                 }
@@ -175,6 +176,9 @@ class ProfileViewModel(
                     .setPhotoUri(android.net.Uri.parse(downloadUrl))
                     .build()
                 user.updateProfile(profileUpdate).await()
+
+                // Sync with Firestore
+                authRepository.updateUserData(user.uid, mapOf("photoUrl" to downloadUrl))
 
                 _uiState.update {
                     it.copy(

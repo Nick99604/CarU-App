@@ -45,6 +45,8 @@ fun HomeScreen(
     onProfileClick: () -> Unit,
     onFavoritesClick: () -> Unit,
     onSavedStationsClick: () -> Unit,
+    onMyStationsClick: () -> Unit,
+    onCreateStationClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onStationClick: (String) -> Unit,
@@ -185,6 +187,13 @@ fun HomeScreen(
 
                     SidebarItem("Mi perfil") { showSidebar = false; onProfileClick() }
                     SidebarItem("Favoritos") { showSidebar = false; onFavoritesClick() }
+                    
+                    if (uiState.userStations.isNotEmpty()) {
+                        SidebarItem("Mis puestos") { showSidebar = false; onMyStationsClick() }
+                    }
+                    
+                    SidebarItem("Crear nuevo puesto") { showSidebar = false; onCreateStationClick() }
+
                     SidebarItem("Ajustes") { showSidebar = false; onSettingsClick() }
 
                     Spacer(modifier = Modifier.weight(1f))

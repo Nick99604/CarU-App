@@ -30,7 +30,10 @@ data class StationRegistration(
     val schedule: StationSchedule = StationSchedule(),
 
     // ImageUploadScreen
-    val stationImageUri: String? = null
+    val stationImageUri: String? = null,
+    
+    // Ownership
+    val ownerId: String = ""
 )
 
 /**

@@ -1,5 +1,7 @@
 package com.empresa.caru.domain.model
 
+import com.google.firebase.firestore.PropertyName
+
 /**
  * Modelo de puesto de comida para Firestore.
  */
@@ -9,7 +11,7 @@ data class FoodStation(
     val vendorName: String = "",
     val address: String = "",
     val phone: String = "",
-    val description: String = "", // Campo añadido
+    val description: String = "",
     val foodTypes: List<String> = emptyList(),
     val schedule: StationScheduleDto = StationScheduleDto(),
     val imageUrl: String? = null,
@@ -31,7 +33,10 @@ data class StationScheduleDto(
 )
 
 data class DayScheduleDto(
-    val isOpen: Boolean = false,
-    val startTime: String = "",
-    val endTime: String = ""
+    @get:PropertyName("isOpen") @set:PropertyName("isOpen")
+    var isOpen: Boolean = false,
+    @get:PropertyName("startTime") @set:PropertyName("startTime")
+    var startTime: String = "",
+    @get:PropertyName("endTime") @set:PropertyName("endTime")
+    var endTime: String = ""
 )

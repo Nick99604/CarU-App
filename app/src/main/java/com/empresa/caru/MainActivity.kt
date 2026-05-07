@@ -4,193 +4,46 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.ui.theme.CarUTheme
 import kotlinx.coroutines.launch
 
-
-// ── Botón reutilizable ───────────────────────────────────────────────────────
-@Composable
-fun AppButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    buttonColor: Color = RedButtonColor,
-    textColor: Color = Color.White
-) {
-    Button(
-        onClick   = onClick,
-        modifier  = modifier
-            .height(60.dp)
-            .fillMaxWidth(),
-        shape     = RoundedCornerShape(50.dp),
-        colors    = ButtonDefaults.buttonColors(
-            containerColor = buttonColor,
-            contentColor   = textColor
-        ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-    ) {
-        Text(
-            text       = text,
-            fontFamily = CaruFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize   = 30.sp
-        )
-    }
-}
-
-// ── Pantalla de inicio ───────────────────────────────────────────────────────
-@Composable
-fun CarUAppStartScreen(
-    onLoginClick: () -> Unit,
-    onCreateAccountClick: () -> Unit,
-    innerPadding: PaddingValues,
-    isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit
-) {
-    val backgroundColor = if (isDarkTheme) Color(0xFF1A1A1A) else Color(0xFFF2F2F2)
-    val sloganColor     = if (isDarkTheme) Color(0xFFAAAAAA)  else TextColorSecondary
-
-    Box(
-        modifier        = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-       Image(
-            painter            = painterResource(id = R.drawable.background_food_pattern),
-            contentDescription = stringResource(R.string.background_pattern_description),
-            modifier           = Modifier.matchParentSize(),
-            contentScale       = ContentScale.Crop,
-            alpha              = if (isDarkTheme) 0.08f else 0.9f
-        )
-
-        IconButton(
-            onClick  = onToggleTheme,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 48.dp, end = 16.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0))
-        ) {
-            Icon(
-                imageVector        = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = stringResource(R.string.change_theme_description),
-                tint               = if (isDarkTheme) Color(0xFFFFD700) else Color(0xFF333333),
-                modifier           = Modifier.size(22.dp)
-            )
-        }
-
-        Column(
-            modifier            = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier         = Modifier
-                    .size(300.dp)
-                    .padding(bottom = 1.dp)
-            ) {
-                Image(
-                    painter            = painterResource(id = R.drawable.logo_caru),
-                    contentDescription = stringResource(R.string.logo_caru_description),
-                    modifier           = Modifier
-                        .size(300.dp)
-                        .clip(CircleShape)
-                )
-            }
-
-            Text(
-                text       = stringResource(R.string.app_name),
-                fontFamily = CaruTitleFontFamily,
-                fontWeight = FontWeight.Bold,
-                color      = Color(0xFFF60606),
-                fontSize   = 110.sp,
-                textAlign  = TextAlign.Center,
-                modifier   = Modifier.padding(bottom = 2.dp)
-            )
-
-            Text(
-                text       = stringResource(R.string.app_slogan),
-                fontFamily = CaruFontFamily,
-                style      = MaterialTheme.typography.bodyLarge,
-                color      = sloganColor,
-                textAlign  = TextAlign.Center,
-                fontWeight = FontWeight.Normal,
-                fontSize   = 25.sp,
-                modifier   = Modifier.padding(bottom = 52.dp)
-            )
-
-            AppButton(
-                text     = stringResource(R.string.login_button),
-                onClick  = onLoginClick,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AppButton(
-                text        = stringResource(R.string.create_account_button),
-                onClick     = onCreateAccountClick,
-                modifier    = Modifier.fillMaxWidth(),
-                buttonColor = RedButtonColor
-            )
-        }
-    }
-}
-
-// ── Actividad principal ──────────────────────────────────────────────────────
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
             var isDarkTheme by remember { mutableStateOf(false) }
-            val navController = rememberNavController()
-            val authRepository: AuthRepository = remember { AuthRepositoryImpl() }
-            val registrationViewModel: RegistrationViewModel = remember { RegistrationViewModel() }
-            val favoritesViewModel: FavoritesViewModel = remember { FavoritesViewModel() }
-            val onboardingViewModel: OnboardingViewModel = remember { OnboardingViewModel() }
-            val homeViewModel: HomeViewModel = remember { HomeViewModel() }
-            val savedStationsViewModel: SavedStationsViewModel = remember { SavedStationsViewModel() }
-            val profileViewModel: ProfileViewModel = remember { ProfileViewModel() }
-
-            val scope = rememberCoroutineScope()
-
+            
             CarUTheme(darkTheme = isDarkTheme) {
+                val navController = rememberNavController()
+                val scope = rememberCoroutineScope()
+                
+                // ViewModels
+                val authRepository = remember { AuthRepositoryImpl() }
+                val registrationViewModel: RegistrationViewModel = viewModel()
+                val homeViewModel: HomeViewModel = viewModel()
+                val favoritesViewModel: FavoritesViewModel = viewModel()
+                val savedStationsViewModel: SavedStationsViewModel = viewModel()
+                val onboardingViewModel: OnboardingViewModel = viewModel()
+                val profileViewModel: ProfileViewModel = viewModel()
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController    = navController,
@@ -254,18 +107,7 @@ class MainActivity : ComponentActivity() {
                                 viewModel = registrationViewModel,
                                 onBackClick = { navController.popBackStack() },
                                 onSaveClick = {
-                                    if (registrationViewModel.isAllCompleted) {
-                                        registrationViewModel.saveStation { success ->
-                                            if (success) {
-                                                homeViewModel.refresh()
-                                                navController.navigate("home") {
-                                                    popUpTo("start") { inclusive = false }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        navController.popBackStack("register_station", inclusive = false)
-                                    }
+                                    navController.popBackStack("register_station", inclusive = false)
                                 },
                                 isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
@@ -287,6 +129,7 @@ class MainActivity : ComponentActivity() {
                                 onEditClick = { navController.navigate("register_station") },
                                 onDeleteConfirm = {
                                     registrationViewModel.deleteStation {
+                                        homeViewModel.refresh()
                                         navController.navigate("home") {
                                             popUpTo("start") { inclusive = false }
                                         }
@@ -314,6 +157,11 @@ class MainActivity : ComponentActivity() {
                                 onProfileClick = { navController.navigate("profile") },
                                 onFavoritesClick = { navController.navigate("favorites") },
                                 onSavedStationsClick = { navController.navigate("saved_stations") },
+                                onMyStationsClick = { navController.navigate("my_stations") },
+                                onCreateStationClick = {
+                                    registrationViewModel.reset()
+                                    navController.navigate("register_station")
+                                },
                                 onSettingsClick = { navController.navigate("settings") },
                                 onLogoutClick = {
                                     scope.launch {
@@ -329,6 +177,22 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         
+                        composable("my_stations") {
+                            MyStationsScreen(
+                                viewModel = homeViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onCreateStationClick = {
+                                    registrationViewModel.reset()
+                                    navController.navigate("register_station")
+                                },
+                                onStationClick = { station ->
+                                    navController.navigate("station_detail/${station.id}")
+                                },
+                                isDarkTheme = isDarkTheme,
+                                innerPadding = innerPadding
+                            )
+                        }
+                        
                         composable("favorites") { FavoritesScreen(favoritesViewModel, { navController.popBackStack() }, { id -> navController.navigate("station_detail/$id") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                         
                         composable("saved_stations") { 
@@ -336,6 +200,7 @@ class MainActivity : ComponentActivity() {
                             SavedStationsScreen(
                                 stations = state.savedStations,
                                 isLoading = state.isLoading,
+                                onBackClick = { navController.popBackStack() },
                                 onStationClick = { id -> navController.navigate("station_detail/$id") },
                                 isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
@@ -348,15 +213,17 @@ class MainActivity : ComponentActivity() {
                         composable("settings") {
                             SettingsScreen(
                                 onBackClick = { navController.popBackStack() },
-                                onLogout = {
-                                    scope.launch {
-                                        authRepository.logout()
-                                        navController.navigate("start") {
-                                            popUpTo("home") { inclusive = true }
+                                onChangePasswordClick = { },
+                                onDeleteStationClick = {
+                                    registrationViewModel.deleteMyStation { success ->
+                                        if (success) {
+                                            homeViewModel.refresh()
+                                            navController.navigate("start") {
+                                                popUpTo("home") { inclusive = true }
+                                            }
                                         }
                                     }
                                 },
-                                onChangePasswordClick = { },
                                 isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
                                 innerPadding = innerPadding
@@ -366,6 +233,17 @@ class MainActivity : ComponentActivity() {
                         composable("register") { RegisterScreen({ navController.popBackStack() }, { navController.navigate("create_user_account") }, { navController.navigate("register_station_user") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                         composable("register_station_user") { RegisterStationUserScreen({ navController.popBackStack() }, { registrationViewModel.reset(); navController.navigate("register_station") { popUpTo("register_station_user") { inclusive = true } } }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                         composable("create_user_account") { CreateUserAccountScreen({ navController.popBackStack() }, { navController.navigate("onboarding_profile_image") { popUpTo("start") { inclusive = false } } }, authRepository, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        
+                        composable("onboarding_profile_image") {
+                            CreateProfileImageScreen(
+                                viewModel = onboardingViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onContinueClick = { navController.navigate("onboarding_interests") },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
                     }
                 }
             }
