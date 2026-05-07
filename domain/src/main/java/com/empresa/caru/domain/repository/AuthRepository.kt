@@ -50,6 +50,11 @@ interface AuthRepository {
     suspend fun sendPasswordReset(email: String): Result<Unit>
 
     /**
+     * Signs out the current user.
+     */
+    suspend fun logout()
+
+    /**
      * Observes authentication state changes.
      * @return Flow that emits the current user profile on subscription and on every auth state change.
      */

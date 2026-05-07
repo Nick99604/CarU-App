@@ -22,7 +22,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
@@ -34,7 +33,7 @@ import androidx.navigation.navArgument
 import com.empresa.caru.domain.repository.AuthRepository
 import com.empresa.caru.data.repository.AuthRepositoryImpl
 import com.empresa.caru.ui.theme.CarUTheme
-import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 
 // ── Botón reutilizable ───────────────────────────────────────────────────────
@@ -189,6 +188,7 @@ class MainActivity : ComponentActivity() {
             val savedStationsViewModel: SavedStationsViewModel = remember { SavedStationsViewModel() }
             val profileViewModel: ProfileViewModel = remember { ProfileViewModel() }
 
+            val scope = rememberCoroutineScope()
 
             CarUTheme(darkTheme = isDarkTheme) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -273,7 +273,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Pantalla de Detalle ACTUALIZADA para recibir ID
                         composable(
                             route = "station_detail/{stationId}",
                             arguments = listOf(navArgument("stationId") { type = NavType.StringType })
@@ -316,13 +315,20 @@ class MainActivity : ComponentActivity() {
                                 onFavoritesClick = { navController.navigate("favorites") },
                                 onSavedStationsClick = { navController.navigate("saved_stations") },
                                 onSettingsClick = { navController.navigate("settings") },
+                                onLogoutClick = {
+                                    scope.launch {
+                                        authRepository.logout()
+                                        navController.navigate("start") {
+                                            popUpTo("home") { inclusive = true }
+                                        }
+                                    }
+                                },
                                 isDarkTheme = isDarkTheme,
                                 onToggleTheme = { isDarkTheme = !isDarkTheme },
                                 innerPadding = innerPadding
                             )
                         }
                         
-                        // Rutas secundarias (favoritos, perfil, etc.)
                         composable("favorites") { FavoritesScreen(favoritesViewModel, { navController.popBackStack() }, { id -> navController.navigate("station_detail/$id") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                         
                         composable("saved_stations") { 
@@ -338,6 +344,25 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("profile") { ProfileScreen({ navController.popBackStack() }, profileViewModel, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
+                        
+                        composable("settings") {
+                            SettingsScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onLogout = {
+                                    scope.launch {
+                                        authRepository.logout()
+                                        navController.navigate("start") {
+                                            popUpTo("home") { inclusive = true }
+                                        }
+                                    }
+                                },
+                                onChangePasswordClick = { },
+                                isDarkTheme = isDarkTheme,
+                                onToggleTheme = { isDarkTheme = !isDarkTheme },
+                                innerPadding = innerPadding
+                            )
+                        }
+
                         composable("register") { RegisterScreen({ navController.popBackStack() }, { navController.navigate("create_user_account") }, { navController.navigate("register_station_user") }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                         composable("register_station_user") { RegisterStationUserScreen({ navController.popBackStack() }, { registrationViewModel.reset(); navController.navigate("register_station") { popUpTo("register_station_user") { inclusive = true } } }, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }
                         composable("create_user_account") { CreateUserAccountScreen({ navController.popBackStack() }, { navController.navigate("onboarding_profile_image") { popUpTo("start") { inclusive = false } } }, authRepository, isDarkTheme, { isDarkTheme = !isDarkTheme }, innerPadding) }

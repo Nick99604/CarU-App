@@ -99,6 +99,10 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun logout() {
+        firebaseAuth.signOut()
+    }
+
     override suspend fun getUserRealName(userId: String): Result<String> {
         return try {
             val docSnapshot = FirebaseFirestore.getInstance()
